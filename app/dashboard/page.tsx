@@ -10,6 +10,7 @@ import {
   ArrowUpRight, ArrowDownRight
 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { fetchWithAuth } from "@/lib/api";
 import {
   mockAlerts, mockDispensingLogs, mockDemandPredictions,
   stockUsageChartData,
@@ -121,8 +122,8 @@ export default function DashboardPage() {
     async function fetchData() {
       try {
         const [kpiRes, alertRes] = await Promise.all([
-          fetch('/api/dashboard/kpis'),
-          fetch('/api/alerts')
+          fetchWithAuth('/api/dashboard/kpis'),
+          fetchWithAuth('/api/alerts')
         ]);
         const kpiData = await kpiRes.json();
         const alertData = await alertRes.json();

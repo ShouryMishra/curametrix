@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { FileText, Clock, TrendingUp, X, Plus, Search } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 import type { DispensingLog, Medicine } from "@/types";
+import { fetchWithAuth } from "@/lib/api";
 
 function NewDispenseDrawer({ onClose, onSave }: { onClose: () => void, onSave: () => void }) {
   const [formData, setFormData] = useState({
@@ -14,7 +15,7 @@ function NewDispenseDrawer({ onClose, onSave }: { onClose: () => void, onSave: (
 
   useEffect(() => {
     async function fetchMedicines() {
-      const res = await fetch('/api/medicines');
+      const res = await fetchWithAuth('/api/medicines');
       const data = await res.json();
       if (data.medicines) setMedicines(data.medicines);
     }
@@ -27,9 +28,8 @@ function NewDispenseDrawer({ onClose, onSave }: { onClose: () => void, onSave: (
     if (!formData.medicineId || !formData.quantity) return alert("Medicine and quantity are required.");
     
     try {
-      const res = await fetch('/api/dispense', {
+      const res = await fetchWithAuth('/api/dispense', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
       if (res.ok) {
@@ -100,7 +100,7 @@ export default function DispensingPage() {
 
   const fetchLogs = async () => {
     try {
-      const res = await fetch('/api/dispense');
+      const res = await fetchWithAuth('/api/dispense');
       const data = await res.json();
       if (data.logs) setLogs(data.logs);
     } catch (err) {

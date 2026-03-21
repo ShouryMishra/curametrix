@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Search, Plus, Minus, Trash2, Printer, CreditCard, Banknote, Smartphone, User } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import type { Medicine } from "@/types";
+import { fetchWithAuth } from "@/lib/api";
 
 interface CartItem {
   id: string;
@@ -25,7 +26,7 @@ export default function BillingPage() {
   useEffect(() => {
     async function fetchMedicines() {
       try {
-        const res = await fetch('/api/medicines');
+        const res = await fetchWithAuth('/api/medicines');
         const data = await res.json();
         if (data.medicines) setMedicines(data.medicines);
       } catch (err) {
@@ -81,9 +82,8 @@ export default function BillingPage() {
     if (!patientName) return alert("Please enter patient name.");
     
     try {
-      const res = await fetch('/api/billing', {
+      const res = await fetchWithAuth('/api/billing', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patientName,
           doctorName,

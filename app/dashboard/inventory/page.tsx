@@ -5,6 +5,7 @@ import { Search, Plus, Filter, Upload, ScanLine, X, ChevronRight, AlertTriangle,
 import { getHazardWarning } from "@/lib/utils";
 import type { Medicine } from "@/types";
 import Papa from "papaparse";
+import { fetchWithAuth } from "@/lib/api";
 
 const categoryColors: Record<string, string> = {
   antibiotic: "#0EA5E9", antidiabetic: "#10B981", cardiovascular: "#1E3A8A",
@@ -43,9 +44,8 @@ function BatchDrawer({ medicine, onClose }: { medicine: Medicine; onClose: () =>
 
   const handleSave = async () => {
     try {
-      const res = await fetch(`/api/medicines/${medicine.id}`, {
+      const res = await fetchWithAuth(`/api/medicines/${medicine.id}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
       if (res.ok) {
@@ -64,7 +64,7 @@ function BatchDrawer({ medicine, onClose }: { medicine: Medicine; onClose: () =>
   const handleDelete = async () => {
     if (!confirm("Are you sure you want to delete this medicine?")) return;
     try {
-      const res = await fetch(`/api/medicines/${medicine.id}`, {
+      const res = await fetchWithAuth(`/api/medicines/${medicine.id}`, {
         method: 'DELETE'
       });
       if (res.ok) {
@@ -204,9 +204,8 @@ function AddMedicineDrawer({ onClose }: { onClose: () => void }) {
 
   const handleSave = async () => {
     try {
-      const res = await fetch('/api/medicines', {
+      const res = await fetchWithAuth('/api/medicines', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
       if (res.ok) {
@@ -292,7 +291,7 @@ export default function InventoryPage() {
   useEffect(() => {
     async function fetchMedicines() {
       try {
-        const res = await fetch('/api/medicines');
+        const res = await fetchWithAuth('/api/medicines');
         const data = await res.json();
         if (data.medicines) setMedicines(data.medicines);
       } catch (err) {
@@ -332,9 +331,8 @@ export default function InventoryPage() {
           }));
 
           try {
-            const res = await fetch("/api/medicines/bulk", {
+            const res = await fetchWithAuth("/api/medicines/bulk", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
               body: JSON.stringify(medicines)
             });
             const result = await res.json();

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Bell, AlertTriangle, Clock, ShieldAlert, Info, CheckCircle2, X, Phone, Mail, Trash2, Brain } from "lucide-react";
 import { mockAlerts } from "@/lib/mockData";
 import type { Alert, AlertType, AlertSeverity } from "@/types";
+import { useEffect } from "react";
+import { fetchWithAuth } from "@/lib/api";
 
 const tabConfig = [
   { key: "all", label: "All", icon: Bell },
@@ -122,7 +124,47 @@ function ManageContactsDrawer({ onClose }: { onClose: () => void }) {
 export default function AlertsPage() {
   const [activeTab, setActiveTab] = useState("all");
   const [showContacts, setShowContacts] = useState(false);
-  const [alerts, setAlerts] = useState(extendedAlerts);
+  const [alerts, setAlerts] = useState<Alert[]>(extendedAlerts);
+  const [loadingAi, setLoadingAi] = useState(false);
+
+  useEffect(() => {
+    async function fetchAlerts() {
+      try {
+        const res = await fetchWithAuth('/api/alerts');
+        const data = await res.json();
+        if (data.alerts) {
+          setAlerts(prev => {
+            const liveIds = new Set(data.alerts.map((a: any) => a.id));
+            const filteredMock = prev.filter(a => !liveIds.has(a.id));
+            return [...data.alerts, ...filteredMock];
+          });
+        }
+      } catch (e) {
+        console.error("Failed to fetch alerts:", e);
+      }
+    }
+    fetchAlerts();
+  }, []);
+
+  const runAiAnalysis = async () => {
+    setLoadingAi(true);
+    try {
+      const res = await fetchWithAuth('/api/ai/generate-orders', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        alert(`AI Analysis Complete! Generated ${data.ordersGenerated} new reorder alerts based on ${data.weather} conditions.`);
+        if (data.orders) {
+          setAlerts(prev => [...data.orders, ...prev]);
+        }
+      } else {
+        alert("Error: " + data.error);
+      }
+    } catch (e) {
+      alert("Failed to run AI analysis.");
+    } finally {
+      setLoadingAi(false);
+    }
+  };
 
   const filtered = alerts.filter(a => {
     if (activeTab === "ai_orders") return a.type === "auto_order" || a.type === "transfer";
@@ -174,6 +216,10 @@ export default function AlertsPage() {
             <span style={{ fontSize: 11, color: "#64748B" }}>· All roles + weekly reports</span>
           </div>
         </div>
+        <button className="btn-primary" style={{ fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }} 
+          onClick={runAiAnalysis} disabled={loadingAi}>
+          {loadingAi ? 'Analyzing...' : <><Brain size={15} /> Run AI Demand Analysis</>}
+        </button>
         <button className="btn-secondary" style={{ fontSize: 13 }} onClick={() => setShowContacts(true)}>Manage Contacts</button>
       </div>
 

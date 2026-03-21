@@ -7,9 +7,10 @@ export async function getActiveAlerts(hospitalId: string): Promise<Alert[]> {
   const snapshot = await adminDb.collection(COLLECTION)
     .where('hospitalId', '==', hospitalId)
     .where('status', '==', 'active')
-    .orderBy('createdAt', 'desc')
     .get();
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Alert));
+    
+  const alerts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Alert));
+  return alerts.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 }
 
 export async function createAlert(alertData: Omit<Alert, 'id' | 'createdAt' | 'status'>): Promise<Alert> {

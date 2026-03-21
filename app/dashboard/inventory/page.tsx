@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Plus, Filter, Upload, ScanLine, X, ChevronRight, AlertTriangle, Thermometer, Package, Edit, Trash2 } from "lucide-react";
-import { mockMedicines } from "@/lib/mockData";
 import { getHazardWarning } from "@/lib/utils";
 import type { Medicine } from "@/types";
 
@@ -234,6 +233,8 @@ function AddMedicineDrawer({ onClose }: { onClose: () => void }) {
 }
 
 export default function InventoryPage() {
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -241,7 +242,22 @@ export default function InventoryPage() {
   const [selected, setSelected] = useState<Medicine | null>(null);
   const [showAdd, setShowAdd] = useState(false);
 
-  const filtered = mockMedicines.filter(m => {
+  useEffect(() => {
+    async function fetchMedicines() {
+      try {
+        const res = await fetch('/api/medicines');
+        const data = await res.json();
+        if (data.medicines) setMedicines(data.medicines);
+      } catch (err) {
+        console.error("Failed to fetch medicines:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchMedicines();
+  }, []);
+
+  const filtered = medicines.filter(m => {
     const matchSearch = m.name.toLowerCase().includes(search.toLowerCase()) ||
       m.genericName.toLowerCase().includes(search.toLowerCase()) ||
       m.brand.toLowerCase().includes(search.toLowerCase());
@@ -252,12 +268,16 @@ export default function InventoryPage() {
   });
 
   const stats = {
-    total: mockMedicines.length,
-    inStock: mockMedicines.filter(m => m.status === "in_stock").length,
-    low: mockMedicines.filter(m => m.status === "low_stock").length,
-    critical: mockMedicines.filter(m => m.status === "critical" || m.status === "out_of_stock").length,
-    hazardous: mockMedicines.filter(m => m.hazardLevel === "high").length,
+    total: medicines.length,
+    inStock: medicines.filter(m => m.status === "in_stock").length,
+    low: medicines.filter(m => m.status === "low_stock").length,
+    critical: medicines.filter(m => m.status === "critical" || m.status === "out_of_stock").length,
+    hazardous: medicines.filter(m => m.hazardLevel === "high").length,
   };
+
+  if (loading) {
+    return <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>Loading Inventory...</div>;
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

@@ -9,11 +9,13 @@ import {
   ShieldAlert, Brain, ChevronRight, CheckCircle, Zap,
   ArrowUpRight, ArrowDownRight
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import {
-  mockKPIs, mockAlerts, mockDispensingLogs,
-  mockDemandPredictions, stockUsageChartData,
+  mockAlerts, mockDispensingLogs, mockDemandPredictions,
+  stockUsageChartData,
   expiryTimelineData, categoryBreakdownData
 } from "@/lib/mockData";
+import { DashboardKPIs, Alert as AlertType } from "@/types";
 import { formatLargeNumber, formatCurrency } from "@/lib/utils";
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
@@ -65,9 +67,9 @@ function KPICard({
 }
 
 // ─── Alert Strip Item ─────────────────────────────────────────────────────────
-function AlertStripItem({ alert }: { alert: typeof mockAlerts[0] }) {
-  const colors = { critical: "#EF4444", warning: "#F59E0B", info: "#0EA5E9" };
-  const bg = { critical: "#FEF2F2", warning: "#FFFBEB", info: "#F0F9FF" };
+function AlertStripItem({ alert }: { alert: AlertType }) {
+  const colors: Record<string, string> = { critical: "#EF4444", warning: "#F59E0B", info: "#0EA5E9" };
+  const bg: Record<string, string> = { critical: "#FEF2F2", warning: "#FFFBEB", info: "#F0F9FF" };
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
@@ -111,8 +113,36 @@ function CustomTooltip({ active, payload, label }: any) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
-  const kpi = mockKPIs;
-  const criticalAlerts = mockAlerts.filter(a => a.severity === "critical" && a.status === "active");
+  const [kpi, setKpi] = useState<DashboardKPIs | null>(null);
+  const [alerts, setAlerts] = useState<AlertType[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [kpiRes, alertRes] = await Promise.all([
+          fetch('/api/dashboard/kpis'),
+          fetch('/api/alerts')
+        ]);
+        const kpiData = await kpiRes.json();
+        const alertData = await alertRes.json();
+        
+        if (kpiData.kpis) setKpi(kpiData.kpis);
+        if (alertData.alerts) setAlerts(alertData.alerts);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading || !kpi) {
+    return <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>Loading Dashboard...</div>;
+  }
+
+  const criticalAlerts = alerts.filter(a => a.severity === "critical" && a.status === "active");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -253,7 +283,7 @@ export default function DashboardPage() {
               <XAxis dataKey="week" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
               <Tooltip
-                formatter={(v: any, name: string) => [
+                formatter={(v: any, name: any) => [
                   name === "value" ? formatCurrency(v) : `${v} items`, name === "value" ? "Est. Loss" : "Items"
                 ]}
                 contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 13 }}

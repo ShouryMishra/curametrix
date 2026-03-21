@@ -1,35 +1,58 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, Plus, Minus, Trash2, Printer, CreditCard, Banknote, Smartphone, User } from "lucide-react";
-import { mockMedicines } from "@/lib/mockData";
 import { formatCurrency } from "@/lib/utils";
+import type { Medicine } from "@/types";
 
 interface CartItem {
   id: string;
   name: string;
-  batch: string;
+  batchId?: string;
   price: number;
   qty: number;
 }
 
 export default function BillingPage() {
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [search, setSearch] = useState("");
   const [patientName, setPatientName] = useState("");
   const [doctorName, setDoctorName] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("cash");
+  const [loading, setLoading] = useState(true);
 
-  const filteredMedicines = mockMedicines.filter(m => 
-    m.name.toLowerCase().includes(search.toLowerCase()) && m.status !== "out_of_stock"
+  useEffect(() => {
+    async function fetchMedicines() {
+      try {
+        const res = await fetch('/api/medicines');
+        const data = await res.json();
+        if (data.medicines) setMedicines(data.medicines);
+      } catch (err) {
+        console.error("Failed to fetch medicines:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchMedicines();
+  }, []);
+
+  const filteredMedicines = medicines.filter(m => 
+    m.name.toLowerCase().includes(search.toLowerCase()) && m.totalQuantity > 0
   ).slice(0, 5);
 
-  const addToCart = (med: any) => {
+  const addToCart = (med: Medicine) => {
     const existing = cart.find(c => c.id === med.id);
     if (existing) {
       setCart(cart.map(c => c.id === med.id ? { ...c, qty: c.qty + 1 } : c));
     } else {
-      setCart([...cart, { id: med.id, name: med.name, batch: "B-2024-0" + Math.floor(Math.random() * 9 + 1), price: med.mrp || 150, qty: 1 }]);
+      setCart([...cart, { 
+        id: med.id, 
+        name: med.name, 
+        price: med.unitPrice || 150, 
+        qty: 1,
+        batchId: (med as any).currentBatchId 
+      }]);
     }
     setSearch("");
   };
@@ -49,17 +72,47 @@ export default function BillingPage() {
   };
 
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const tax = subtotal * 0.12; // 12% GST
-  const discount = subtotal > 1000 ? subtotal * 0.10 : 0; // 10% discount over ₹1000
+  const tax = subtotal * 0.12; 
+  const discount = subtotal > 1000 ? subtotal * 0.10 : 0; 
   const total = subtotal + tax - discount;
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (cart.length === 0) return alert("Cart is empty.");
     if (!patientName) return alert("Please enter patient name.");
-    alert(`Bill generated successfully!\n\nPatient: ${patientName}\nTotal: ₹${total.toFixed(2)}\nPayment: ${paymentMethod.toUpperCase()}\n\nThis will trigger invoice printing once Firebase is integrated.`);
-    setCart([]);
-    setPatientName("");
-    setDoctorName("");
+    
+    try {
+      const res = await fetch('/api/billing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patientName,
+          doctorName,
+          items: cart.map(item => ({
+            medicineId: item.id,
+            batchId: item.batchId || "",
+            quantity: item.qty,
+            price: item.price
+          })),
+          subtotal,
+          tax,
+          discount,
+          total,
+          paymentMethod
+        })
+      });
+
+      const result = await res.json();
+      if (result.bill) {
+        alert(`Bill Generated Successfully!\nInvoice ID: ${result.bill.id}\nTotal: ₹${total.toFixed(2)}`);
+        setCart([]);
+        setPatientName("");
+        setDoctorName("");
+      } else {
+        alert("Billing failed: " + result.error);
+      }
+    } catch (err) {
+      alert("Error generating bill.");
+    }
   };
 
   return (
@@ -125,7 +178,7 @@ export default function BillingPage() {
                     <tr key={item.id}>
                       <td>
                         <div style={{ fontWeight: 600 }}>{item.name}</div>
-                        <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "JetBrains Mono, monospace" }}>{item.batch}</div>
+                        <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "JetBrains Mono, monospace" }}>{item.batchId || "No Batch"}</div>
                       </td>
                       <td>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>

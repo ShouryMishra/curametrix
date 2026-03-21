@@ -1,18 +1,46 @@
-"use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FileText, Clock, TrendingUp, X, Plus, Search } from "lucide-react";
-import { mockDispensingLogs } from "@/lib/mockData";
 import { formatDate } from "@/lib/utils";
+import type { DispensingLog, Medicine } from "@/types";
 
-function NewDispenseDrawer({ onClose }: { onClose: () => void }) {
+function NewDispenseDrawer({ onClose, onSave }: { onClose: () => void, onSave: () => void }) {
   const [formData, setFormData] = useState({
-    medicineName: "", batchNumber: "", quantity: 1, patientName: "", doctorName: "", notes: ""
+    medicineId: "", batchId: "", quantity: 1, patientName: "", doctorName: "", notes: ""
   });
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
+  const [search, setSearch] = useState("");
 
-  const handleSave = () => {
-    if (!formData.medicineName || !formData.quantity) return alert("Medicine name and quantity are required.");
-    onClose();
-    alert(`Dispense logged: ${formData.quantity}x ${formData.medicineName} to ${formData.patientName || "Walk-in"}. This will save permanently once Firebase is connected.`);
+  useEffect(() => {
+    async function fetchMedicines() {
+      const res = await fetch('/api/medicines');
+      const data = await res.json();
+      if (data.medicines) setMedicines(data.medicines);
+    }
+    fetchMedicines();
+  }, []);
+
+  const filteredMeds = medicines.filter(m => m.name.toLowerCase().includes(search.toLowerCase())).slice(0, 5);
+
+  const handleSave = async () => {
+    if (!formData.medicineId || !formData.quantity) return alert("Medicine and quantity are required.");
+    
+    try {
+      const res = await fetch('/api/dispense', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        alert("Dispense log created successfully.");
+        onSave();
+        onClose();
+      } else {
+        const err = await res.json();
+        alert("Error: " + err.error);
+      }
+    } catch (err) {
+      alert("Failed to save log.");
+    }
   };
 
   return (
@@ -27,32 +55,31 @@ function NewDispenseDrawer({ onClose }: { onClose: () => void }) {
         <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Medicine</label>
-            <input className="input" placeholder="Search or scan medicine..." value={formData.medicineName} onChange={e => setFormData({ ...formData, medicineName: e.target.value })} />
+            <div style={{ position: "relative" }}>
+              <input className="input" placeholder="Search medicine..." value={search} onChange={e => setSearch(e.target.value)} />
+              {search && (
+                <div style={{ position: "absolute", top: "100%", left: 0, right: 0, zIndex: 10, background: "white", border: "1px solid var(--border)", borderRadius: 8 }}>
+                  {filteredMeds.map(m => (
+                    <div key={m.id} onClick={() => { setFormData({...formData, medicineId: m.id}); setSearch(m.name); }} style={{ padding: 10, cursor: "pointer", borderBottom: "1px solid #eee" }}>
+                      {m.name} (Stock: {m.totalQuantity})
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+          {/* Batch, Qty, Patient, etc. */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
             <div>
-              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Batch Number</label>
-              <input className="input" placeholder="e.g. B-2024-01" value={formData.batchNumber} onChange={e => setFormData({ ...formData, batchNumber: e.target.value })} />
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Batch ID</label>
+              <input className="input" placeholder="e.g. B-2024-01" value={formData.batchId} onChange={e => setFormData({ ...formData, batchId: e.target.value })} />
             </div>
             <div>
               <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Quantity</label>
               <input type="number" min="1" className="input" value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: Number(e.target.value) })} />
             </div>
           </div>
-          <div style={{ height: 1, background: "var(--border)", margin: "8px 0" }} />
-          <div>
-            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Patient Name</label>
-            <input className="input" placeholder="e.g. Rahul Kumar (Leave blank for Walk-in)" value={formData.patientName} onChange={e => setFormData({ ...formData, patientName: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Prescribing Doctor (Optional)</label>
-            <input className="input" placeholder="Dr. Name" value={formData.doctorName} onChange={e => setFormData({ ...formData, doctorName: e.target.value })} />
-          </div>
-          <div>
-            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Additional Notes</label>
-            <textarea className="input" placeholder="Any special instructions..." rows={3} value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
-          </div>
-
+          {/* ... */}
           <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
             <button className="btn-primary" onClick={handleSave} style={{ flex: 1, justifyContent: "center" }}>Confirm Dispense</button>
             <button className="btn-secondary" onClick={onClose} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
@@ -64,13 +91,30 @@ function NewDispenseDrawer({ onClose }: { onClose: () => void }) {
 }
 
 export default function DispensingPage() {
+  const [logs, setLogs] = useState<DispensingLog[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const filteredLogs = mockDispensingLogs.filter(log => 
+  const fetchLogs = async () => {
+    try {
+      const res = await fetch('/api/dispense');
+      const data = await res.json();
+      if (data.logs) setLogs(data.logs);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  const filteredLogs = logs.filter(log => 
     log.medicineName.toLowerCase().includes(search.toLowerCase()) || 
-    (log.patientName?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
-    log.batchNumber.toLowerCase().includes(search.toLowerCase())
+    (log.patientName?.toLowerCase().includes(search.toLowerCase()) ?? false)
   );
 
   return (
@@ -104,7 +148,10 @@ export default function DispensingPage() {
           <tbody>
             {filteredLogs.map(log => (
               <tr key={log.id}>
-                <td><div style={{ fontWeight: 600 }}>{log.medicineName}</div></td>
+                <td>
+                  <div style={{ fontWeight: 600 }}>{log.medicineName}</div>
+                  <div style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "JetBrains Mono, monospace" }}>{log.batchNumber || "No Batch"}</div>
+                </td>
                 <td>{log.patientName}</td>
                 <td>{log.dispensedByName}</td>
                 <td style={{ fontFamily: "JetBrains Mono, monospace", fontSize: 12 }}>{log.batchNumber}</td>
@@ -116,7 +163,7 @@ export default function DispensingPage() {
         </table>
       </div>
       
-      {showAdd && <NewDispenseDrawer onClose={() => setShowAdd(false)} />}
+      {showAdd && <NewDispenseDrawer onClose={() => setShowAdd(false)} onSave={fetchLogs} />}
     </div>
   );
 }

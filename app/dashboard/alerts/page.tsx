@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, AlertTriangle, Clock, ShieldAlert, Info, CheckCircle2, X, Phone, Mail, Trash2 } from "lucide-react";
+import { Bell, AlertTriangle, Clock, ShieldAlert, Info, CheckCircle2, X, Phone, Mail, Trash2, Brain } from "lucide-react";
 import { mockAlerts } from "@/lib/mockData";
 import type { Alert, AlertType, AlertSeverity } from "@/types";
 
@@ -11,6 +11,7 @@ const tabConfig = [
   { key: "expiry", label: "Expiry", icon: Clock },
   { key: "low_stock", label: "Low Stock", icon: ShieldAlert },
   { key: "fraud", label: "Fraud", icon: ShieldAlert },
+  { key: "ai_orders", label: "AI Orders", icon: Brain },
   { key: "info", label: "Info", icon: Info },
 ];
 
@@ -35,8 +36,9 @@ const severityConfig: Record<AlertSeverity, { bg: string; border: string; dot: s
 const extendedAlerts: Alert[] = [
   ...mockAlerts,
   { id: "a5", type: "temperature", severity: "warning", title: "Cold Storage Zone B — Temp Rising", message: "Zone B temperature at 9.8°C, exceeds safe threshold (2–8°C). Check refrigeration unit.", status: "active", smsSent: true, emailSent: false, hospitalId: "hosp001", createdAt: new Date(Date.now() - 1800000) },
-  { id: "a6", type: "auto_order", severity: "info", title: "Auto PO Generated — Metformin 500mg", message: "Purchase order PO-2024-089 auto-generated for 300 strips of Metformin 500mg. Awaiting approval.", status: "active", smsSent: false, emailSent: true, hospitalId: "hosp001", createdAt: new Date(Date.now() - 5400000) },
-  { id: "a7", type: "compliance", severity: "warning", title: "Drug Price Violation — Paracetamol 650mg", message: "Current dispensing price ₹18 exceeds DPCO ceiling price ₹14.50. Auto-compliance flagged.", status: "active", smsSent: true, emailSent: true, hospitalId: "hosp001", createdAt: new Date(Date.now() - 9000000) },
+  { id: "a6", type: "auto_order", severity: "info", title: "AI Reorder — Metformin 500mg", message: "Predicted 30-day demand: 420 units. Current stock: 120. Recommended order: 300 units.", status: "active", smsSent: false, emailSent: true, hospitalId: "hosp001", createdAt: new Date(Date.now() - 5400000) },
+  { id: "a7", type: "auto_order", severity: "warning", title: "Weather Alert: Monsoon Surge Demand", message: "Viral infection trends rising due to high humidity. Suggesting 20% increase in Paracetamol 650mg stock.", status: "active", smsSent: true, emailSent: true, hospitalId: "hosp001", createdAt: new Date(Date.now() - 9000000) },
+  { id: "a8", type: "transfer", severity: "info", title: "Excess Stock Suggestion — Insulin", message: "Stock for Insulin Glargine is 3.2x predicted monthly need. Suggesting transfer of 50 units to Memorial Hospital.", status: "active", smsSent: false, emailSent: false, hospitalId: "hosp001", createdAt: new Date(Date.now() - 12000000) },
 ];
 
 function ManageContactsDrawer({ onClose }: { onClose: () => void }) {
@@ -123,9 +125,7 @@ export default function AlertsPage() {
   const [alerts, setAlerts] = useState(extendedAlerts);
 
   const filtered = alerts.filter(a => {
-    if (activeTab === "all") return true;
-    if (activeTab === "critical") return a.severity === "critical";
-    if (activeTab === "info") return a.severity === "info";
+    if (activeTab === "ai_orders") return a.type === "auto_order" || a.type === "transfer";
     return a.type === activeTab;
   });
 

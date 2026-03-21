@@ -302,19 +302,19 @@ export default function DashboardPage() {
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>Stock distribution %</div>
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
-              <Pie data={categoryBreakdownData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
+              <Pie data={kpi.categoryBreakdown || categoryBreakdownData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
                 dataKey="value" paddingAngle={2}>
-                {categoryBreakdownData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
+                {(kpi.categoryBreakdown || categoryBreakdownData).map((entry: any, i: number) => (
+                  <Cell key={i} fill={entry.color || "#0EA5E9"} />
                 ))}
               </Pie>
               <Tooltip formatter={(v: any) => [`${v}%`, "Share"]} contentStyle={{ borderRadius: 8, fontSize: 13 }} />
             </PieChart>
           </ResponsiveContainer>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {categoryBreakdownData.map(c => (
+            {(kpi.categoryBreakdown || categoryBreakdownData).map((c: any) => (
               <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: c.color, flexShrink: 0 }} />
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: c.color || "#0EA5E9", flexShrink: 0 }} />
                 <span style={{ color: "var(--text-muted)", flex: 1 }}>{c.name}</span>
                 <span style={{ fontWeight: 700, color: "var(--text)", fontFamily: "JetBrains Mono, monospace" }}>{c.value}%</span>
               </div>

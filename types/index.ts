@@ -78,6 +78,7 @@ export interface Medicine {
   barcode?: string;
   isCritical: boolean; // life-saving drug flag
   isScheduled: boolean; // controlled substance
+  currentBatchId?: string; // Reference to the active batch for POS
 
   createdAt: Date;
   updatedAt: Date;
@@ -297,6 +298,7 @@ export interface DashboardKPIs {
   stockEfficiency: number; // %
   pendingOrders: number;
   fraudAlerts: number;
+  categoryBreakdown?: { name: string; value: number; color?: string }[];
 }
 
 // ─── Notification Contact ─────────────────────────────────────────────────────

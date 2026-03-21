@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Search, Plus, Filter, Upload, ScanLine, X, ChevronRight, AlertTriangle, Thermometer, Package, Edit, Trash2 } from "lucide-react";
 import { getHazardWarning } from "@/lib/utils";
 import type { Medicine } from "@/types";
+import Papa from "papaparse";
 
 const categoryColors: Record<string, string> = {
   antibiotic: "#0EA5E9", antidiabetic: "#10B981", cardiovascular: "#1E3A8A",
@@ -40,10 +41,40 @@ function BatchDrawer({ medicine, onClose }: { medicine: Medicine; onClose: () =>
   const [formData, setFormData] = useState({ ...medicine });
   const warning = getHazardWarning(medicine.hazardType);
 
-  const handleSave = () => {
-    // Fake save to simulate UI before Firebase integration
-    setIsEditing(false);
-    alert("Saved (Mock): Changes will be permanently saved once Firebase is connected.");
+  const handleSave = async () => {
+    try {
+      const res = await fetch(`/api/medicines/${medicine.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        alert("Medicine updated successfully.");
+        onClose();
+        window.location.reload(); 
+      } else {
+        const data = await res.json();
+        alert("Error: " + data.error);
+      }
+    } catch (err) {
+      alert("Failed to update medicine.");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm("Are you sure you want to delete this medicine?")) return;
+    try {
+      const res = await fetch(`/api/medicines/${medicine.id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        alert("Medicine deleted.");
+        onClose();
+        window.location.reload();
+      }
+    } catch (err) {
+      alert("Failed to delete.");
+    }
   };
 
   return (
@@ -152,8 +183,9 @@ function BatchDrawer({ medicine, onClose }: { medicine: Medicine; onClose: () =>
               )}
 
               {/* Action buttons */}
-              <div style={{ display: "flex", gap: 10 }}>
-                <button className="btn-primary" onClick={() => setIsEditing(true)} style={{ flex: 1, justifyContent: "center" }}><Edit size={14} /> Edit</button>
+              <div style={{ display: "flex", gap: 10, marginTop: 20 }}>
+                <button className="btn-secondary" onClick={() => setIsEditing(true)} style={{ flex: 1, justifyContent: "center" }}><Edit size={16} /> Edit Details</button>
+                <button className="btn-secondary" onClick={handleDelete} style={{ flex: 1, justifyContent: "center", color: "#EF4444", borderColor: "#FEE2E2" }}><Trash2 size={16} /> Delete</button>
                 <button className="btn-secondary" style={{ flex: 1, justifyContent: "center" }}><Package size={14} /> Add Stock</button>
               </div>
             </>
@@ -170,9 +202,24 @@ function AddMedicineDrawer({ onClose }: { onClose: () => void }) {
     totalQuantity: 0, reorderLevel: 0, unitPrice: 0, mrp: 0
   });
 
-  const handleSave = () => {
-    onClose();
-    alert("Medicine added (Mock). Changes will permanently save once Firebase is connected.");
+  const handleSave = async () => {
+    try {
+      const res = await fetch('/api/medicines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (res.ok) {
+        alert("Medicine added successfully.");
+        onClose();
+        window.location.reload();
+      } else {
+        const data = await res.json();
+        alert("Error: " + data.error);
+      }
+    } catch (err) {
+      alert("Failed to add medicine.");
+    }
   };
 
   return (
@@ -257,6 +304,55 @@ export default function InventoryPage() {
     fetchMedicines();
   }, []);
 
+  const handleBulkUpload = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+          const data = results.data as any[];
+          // Map CSV headers to Medicine type
+          const medicines = data.map(row => ({
+            name: row.drug_name || row.Name || row.name,
+            brand: row.brand || row.Brand || row.manufacturer || "",
+            genericName: row.generic_name || row.Generic || row.brand || "",
+            category: (row.drug_category || row.Category || "general").toLowerCase(),
+            totalQuantity: parseInt(row.remaining_stock || row.Stock || row.totalQuantity || "0"),
+            unit: row.unit || row.Unit || "strips",
+            unitPrice: parseFloat(row.price_per_unit_inr || row.Price || row.unitPrice || "0"),
+            reorderLevel: parseInt(row.reorder_level || row.MinStock || row.reorderLevel || "30"),
+            status: "in_stock",
+            hazardLevel: "safe"
+          }));
+
+          try {
+            const res = await fetch("/api/medicines/bulk", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(medicines)
+            });
+            const result = await res.json();
+            if (result.success) {
+              alert(`Successfully uploaded ${result.count} medicines! Your inventory is now synced with your data.`);
+              window.location.reload();
+            } else {
+              alert("Error: " + result.error);
+            }
+          } catch (error) {
+            alert("Failed to upload CSV.");
+          }
+        }
+      });
+    };
+    input.click();
+  };
+
   const filtered = medicines.filter(m => {
     const matchSearch = m.name.toLowerCase().includes(search.toLowerCase()) ||
       m.genericName.toLowerCase().includes(search.toLowerCase()) ||
@@ -326,16 +422,7 @@ export default function InventoryPage() {
         </select>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <button className="btn-ghost" style={{ fontSize: 13, gap: 6 }}><ScanLine size={14} /> Scanner</button>
-          <button className="btn-ghost" style={{ fontSize: 13, gap: 6 }} onClick={() => {
-            const input = document.createElement("input");
-            input.type = "file";
-            input.accept = ".csv,.xlsx";
-            input.onchange = (e) => {
-              const file = (e.target as HTMLInputElement).files?.[0];
-              if (file) alert(`File selected: ${file.name}. Actual CSV parsing and bulk upload will occur once Firebase is connected.`);
-            };
-            input.click();
-          }}>
+          <button className="btn-ghost" style={{ fontSize: 13, gap: 6 }} onClick={handleBulkUpload}>
             <Upload size={14} /> Bulk Upload
           </button>
           <button className="btn-primary" onClick={() => setShowAdd(true)} style={{ fontSize: 13 }}><Plus size={14} /> Add Medicine</button>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ShieldAlert, Eye, AlertTriangle, TrendingDown, Search, Filter } from "lucide-react";
+import { ShieldAlert, Eye, AlertTriangle, TrendingDown, Search, Filter, X } from "lucide-react";
 
 const anomalies = [
   { id: "f1", type: "Stock Disappearance", medicine: "Morphine Sulfate", detail: "10 units removed without billing record", time: "Today, 2:15 PM", user: "Unknown", severity: "critical", status: "investigating" },
@@ -25,8 +25,74 @@ const typeIcon: Record<string, string> = {
   "Fake Entry Detected": "⚠️",
 };
 
+function InvestigateDrawer({ anomaly, onClose }: { anomaly: any, onClose: () => void }) {
+  const [resolution, setResolution] = useState(anomaly.status);
+  const [notes, setNotes] = useState("");
+
+  const handleSave = () => {
+    onClose();
+    alert(`Fraud Investigation Updated for ${anomaly.medicine}\n\nStatus set to: ${resolution.toUpperCase()}\n\nThis update will reflect globally once Firebase is connected.`);
+  };
+
+  return (
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="drawer" style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 450 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>Investigate Anomaly</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+        </div>
+        
+        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ padding: 16, background: "var(--bg)", borderRadius: 12, border: "1px solid var(--border)" }}>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", marginBottom: 8 }}>Incident Details</div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{anomaly.type}</div>
+            <div style={{ fontSize: 13, marginBottom: 8 }}>{anomaly.detail}</div>
+            <div style={{ fontSize: 12, color: "var(--text-muted)", display: "flex", flexDirection: "column", gap: 4 }}>
+              <span><b>Medicine:</b> {anomaly.medicine}</span>
+              <span><b>User/System:</b> {anomaly.user}</span>
+              <span><b>Detected:</b> {anomaly.time}</span>
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Update Status</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              {["flagged", "investigating", "resolved"].map(s => (
+                <button 
+                  key={s} onClick={() => setResolution(s)} 
+                  style={{
+                    flex: 1, padding: "8px 0", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", textTransform: "capitalize",
+                    border: resolution === s ? "2px solid var(--accent)" : "1px solid var(--border)",
+                    background: resolution === s ? "var(--accent-light)" : "white",
+                    color: resolution === s ? "var(--accent)" : "var(--text)",
+                    transition: "all 0.15s"
+                  }}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Investigation Notes</label>
+            <textarea className="input" placeholder="Document your findings, actions taken, or reasons for resolution..." rows={6} value={notes} onChange={e => setNotes(e.target.value)} />
+          </div>
+
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <button className="btn-primary" onClick={handleSave} style={{ flex: 1, justifyContent: "center" }}>Save Investigation</button>
+            <button className="btn-secondary" onClick={onClose} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function FraudPage() {
   const [status, setStatus] = useState("all");
+  const [selectedAnomaly, setSelectedAnomaly] = useState<any>(null);
 
   const filtered = anomalies.filter(a => status === "all" || a.status === status);
 
@@ -53,7 +119,7 @@ export default function FraudPage() {
         <div>
           <div style={{ fontWeight: 700, fontSize: 14 }}>How Fraud Detection Works</div>
           <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 2 }}>
-            Rule-based engine + ML anomaly scoring monitors: stock removals without billing, quantities 3× above daily average, price > MRP, duplicate GRN entries, and unrecognized supplier records.
+            Rule-based engine + ML anomaly scoring monitors: stock removals without billing, quantities 3× above daily average, price &gt; MRP, duplicate GRN entries, and unrecognized supplier records.
           </div>
         </div>
       </div>
@@ -109,13 +175,15 @@ export default function FraudPage() {
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 6, alignSelf: "center" }}>
-                  <button className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}><Eye size={13} /> Investigate</button>
+                  <button className="btn-ghost" onClick={() => setSelectedAnomaly(a)} style={{ fontSize: 12, padding: "5px 10px" }}><Eye size={13} /> Investigate</button>
                 </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {selectedAnomaly && <InvestigateDrawer anomaly={selectedAnomaly} onClose={() => setSelectedAnomaly(null)} />}
     </div>
   );
 }

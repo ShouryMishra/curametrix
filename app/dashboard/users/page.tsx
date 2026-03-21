@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { User, Lock, Bell, Phone, Mail, Shield, Plus, Edit, Trash2, Check } from "lucide-react";
+import { User, Lock, Bell, Phone, Mail, Shield, Plus, Edit, Trash2, Check, X } from "lucide-react";
 import type { UserRole } from "@/types";
 
 const users = [
@@ -27,8 +27,78 @@ const notificationSettings = [
 
 const tabs = ["User Management", "Roles & Permissions", "Notification Settings"];
 
+function AddEditUserDrawer({ user, onClose }: { user?: any, onClose: () => void }) {
+  const isNew = !user || user.isNew;
+  const [formData, setFormData] = useState(isNew ? { name: "", email: "", phone: "+91 ", role: "viewer", status: "active" } : { ...user });
+
+  const handleSave = () => {
+    onClose();
+    alert(`${isNew ? "User Created" : "User Updated"}: ${formData.name}.\n\nA confirmation email and access credentials have been securely queued.`);
+  };
+
+  return (
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="drawer" style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 450 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>{isNew ? "Add New User" : "Edit User"}</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+        </div>
+        
+        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Full Name</label>
+            <input className="input" placeholder="e.g. Rahul Sharma" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+          </div>
+
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Email Address</label>
+            <input className="input" type="email" placeholder="e.g. rahul@hospital.com" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+          </div>
+
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Phone Number</label>
+            <input className="input" value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Role</label>
+              <select className="select" value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} style={{ fontSize: 13 }}>
+                <option value="admin">Admin</option>
+                <option value="store_manager">Store Manager</option>
+                <option value="pharmacist">Pharmacist</option>
+                <option value="viewer">Viewer</option>
+              </select>
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Status</label>
+              <select className="select" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })} style={{ fontSize: 13 }}>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          {isNew && (
+            <div style={{ padding: "12px 14px", background: "#EFF6FF", borderRadius: 8, border: "1px solid #BFDBFE", fontSize: 12, color: "#1E3A8A", marginTop: 8 }}>
+              🔑 A temporary password will be auto-generated and sent via email. They will be prompted to change it upon first login.
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 10, marginTop: "auto" }}>
+            <button className="btn-primary" onClick={handleSave} style={{ flex: 1, justifyContent: "center" }}>{isNew ? "Create User" : "Save Changes"}</button>
+            <button className="btn-secondary" onClick={onClose} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function UsersPage() {
   const [activeTab, setActiveTab] = useState("User Management");
+  const [editingUser, setEditingUser] = useState<any>(null);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -44,7 +114,7 @@ export default function UsersPage() {
             }}>{t}</button>
           ))}
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", padding: "0 0 0 12px" }}>
-            <button className="btn-primary" style={{ fontSize: 13 }}><Plus size={14} /> Add User</button>
+            <button onClick={() => setEditingUser({ isNew: true })} className="btn-primary" style={{ fontSize: 13 }}><Plus size={14} /> Add User</button>
           </div>
         </div>
 
@@ -79,8 +149,8 @@ export default function UsersPage() {
                         <td style={{ fontSize: 12, color: "var(--text-muted)" }}>{u.lastLogin}</td>
                         <td>
                           <div style={{ display: "flex", gap: 6 }}>
-                            <button className="btn-ghost" style={{ padding: "5px 8px" }}><Edit size={13} /></button>
-                            <button className="btn-ghost" style={{ padding: "5px 8px" }}><Trash2 size={13} /></button>
+                            <button onClick={() => setEditingUser(u)} className="btn-ghost" style={{ padding: "5px 8px" }}><Edit size={13} /></button>
+                            <button onClick={() => { if(window.confirm('Are you sure you want to delete this user? This revokes all system access.')) alert('User successfully removed (mock).') }} className="btn-ghost" style={{ color: "#EF4444", padding: "5px 8px" }}><Trash2 size={13} /></button>
                           </div>
                         </td>
                       </tr>
@@ -150,6 +220,8 @@ export default function UsersPage() {
           )}
         </div>
       </div>
+
+      {editingUser && <AddEditUserDrawer user={editingUser} onClose={() => setEditingUser(null)} />}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Truck, Package, FileText, ArrowLeftRight, Plus, CheckCircle2, Clock, XCircle } from "lucide-react";
+import { Truck, Package, FileText, ArrowLeftRight, Plus, CheckCircle2, Clock, XCircle, X } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 const suppliers = [
@@ -32,8 +32,126 @@ const poStatusConfig: Record<string, { color: string; bg: string; icon: React.El
 
 const tabs = ["Suppliers", "Purchase Orders", "Inter-Hospital Transfers", "Returns & Disposal"];
 
+function AddSupplierDrawer({ onClose }: { onClose: () => void }) {
+  const [formData, setFormData] = useState({
+    name: "", contact: "", phone: "", email: "", city: "", notes: ""
+  });
+
+  const handleSave = () => {
+    if (!formData.name || !formData.phone) return alert("Supplier Name and Phone are required.");
+    onClose();
+    alert(`Supplier "${formData.name}" added successfully. This will permanently save once Firebase is connected.`);
+  };
+
+  return (
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="drawer" style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 450 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>Add New Supplier</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+        </div>
+        
+        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Supplier/Company Name *</label>
+            <input className="input" placeholder="e.g. MedLine Pharma Pvt Ltd" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Contact Person</label>
+            <input className="input" placeholder="e.g. Rajesh Kumar" value={formData.contact} onChange={e => setFormData({ ...formData, contact: e.target.value })} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Phone Number *</label>
+              <input className="input" placeholder="+91..." value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} />
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Email</label>
+              <input type="email" className="input" placeholder="@" value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
+            </div>
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>City/Region</label>
+            <input className="input" placeholder="e.g. Mumbai" value={formData.city} onChange={e => setFormData({ ...formData, city: e.target.value })} />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Notes/Address</label>
+            <textarea className="input" placeholder="Office address, terms of service..." rows={3} value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} />
+          </div>
+
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <button className="btn-primary" onClick={handleSave} style={{ flex: 1, justifyContent: "center" }}>Save Supplier</button>
+            <button className="btn-secondary" onClick={onClose} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+function ActionDrawer({ title, type, onClose }: { title: string, type: string, onClose: () => void }) {
+  return (
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="drawer" style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 450 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>{title}</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+        </div>
+        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ padding: "12px 14px", background: "#EFF6FF", borderRadius: 8, border: "1px solid #BFDBFE", fontSize: 13, color: "#1D4ED8" }}>
+            This {type} will be fully auto-populated with AI recommendations and inventory data when Firebase is connected.
+          </div>
+          {type === "Purchase Order" && (
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Select Supplier</label>
+              <select className="select" style={{ fontSize: 13 }}>
+                {suppliers.map(s => <option key={s.id}>{s.name}</option>)}
+              </select>
+            </div>
+          )}
+          {type === "Inter-Hospital Transfer" && (
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Destination Hospital</label>
+              <select className="select" style={{ fontSize: 13 }}>
+                <option>District Hospital B (High Demand)</option>
+                <option>Community Health Center A</option>
+              </select>
+            </div>
+          )}
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Select Medicine / Item</label>
+            <input className="input" placeholder="Search inventory..." />
+          </div>
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Quantity</label>
+            <input className="input" type="number" placeholder="0" />
+          </div>
+          {type === "Return" && (
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Reason for Return/Disposal</label>
+              <select className="select" style={{ fontSize: 13 }}>
+                <option>Expired Stock</option>
+                <option>Damaged in Transit</option>
+                <option>Recalled Batch</option>
+              </select>
+            </div>
+          )}
+          <div style={{ display: "flex", gap: 10, marginTop: "auto" }}>
+            <button className="btn-primary" onClick={() => { alert(title + " Submitted."); onClose(); }} style={{ flex: 1, justifyContent: "center" }}>Confirm {title}</button>
+            <button className="btn-secondary" onClick={onClose} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function SupplyChainPage() {
   const [activeTab, setActiveTab] = useState("Suppliers");
+  const [showAddSupplier, setShowAddSupplier] = useState(false);
+  const [actionDrawer, setActionDrawer] = useState<{title: string, type: string} | null>(null);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -49,7 +167,14 @@ export default function SupplyChainPage() {
             }}>{t}</button>
           ))}
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", padding: "0 0 0 12px" }}>
-            <button className="btn-primary" style={{ fontSize: 13 }}><Plus size={14} /> {activeTab === "Suppliers" ? "Add Supplier" : activeTab === "Purchase Orders" ? "New PO" : "New Transfer"}</button>
+            <button className="btn-primary" style={{ fontSize: 13 }} onClick={() => {
+              if (activeTab === "Suppliers") setShowAddSupplier(true);
+              else if (activeTab === "Purchase Orders") setActionDrawer({ title: "Draft new Purchase Order", type: "Purchase Order" });
+              else if (activeTab === "Inter-Hospital Transfers") setActionDrawer({ title: "Initiate Transfer", type: "Inter-Hospital Transfer" });
+              else if (activeTab === "Returns & Disposal") setActionDrawer({ title: "Log Return", type: "Return" });
+            }}>
+              <Plus size={14} /> {activeTab === "Suppliers" ? "Add Supplier" : activeTab === "Purchase Orders" ? "New PO" : activeTab === "Inter-Hospital Transfers" ? "New Transfer" : "New Return"}
+            </button>
           </div>
         </div>
 
@@ -71,7 +196,7 @@ export default function SupplyChainPage() {
                     <span className={`badge ${s.isActive ? "badge-success" : "badge-warning"}`}>{s.isActive ? "Active" : "Inactive"}</span>
                     <div style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>Last order: {s.lastOrder}</div>
                   </div>
-                  <button className="btn-ghost" style={{ fontSize: 13 }}>View</button>
+                  <button onClick={() => alert(`Opening full profile for ${s.name}`)} className="btn-ghost" style={{ fontSize: 13 }}>View</button>
                 </div>
               ))}
             </div>
@@ -106,8 +231,8 @@ export default function SupplyChainPage() {
                           </td>
                           <td style={{ fontSize: 12, color: "var(--text-muted)" }}>{po.created}</td>
                           <td>
-                            {po.status === "pending" && <button className="btn-primary" style={{ fontSize: 12, padding: "5px 10px" }}>Approve</button>}
-                            {po.status !== "pending" && <button className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}>View</button>}
+                            {po.status === "pending" && <button onClick={() => alert(`PO ${po.number} for ${formatCurrency(po.amount)} approved. Supplier ${po.supplier} notified.`)} className="btn-primary" style={{ fontSize: 12, padding: "5px 10px" }}>Approve</button>}
+                            {po.status !== "pending" && <button onClick={() => alert(`Opening PDF invoice view for PO ${po.number}`)} className="btn-ghost" style={{ fontSize: 12, padding: "5px 10px" }}>View</button>}
                           </td>
                         </tr>
                       );
@@ -143,8 +268,8 @@ export default function SupplyChainPage() {
                   <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 6 }}>{t.reason}</div>
                   {t.status === "suggested" && (
                     <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-                      <button className="btn-primary" style={{ fontSize: 13 }}>Approve Transfer</button>
-                      <button className="btn-ghost" style={{ fontSize: 13 }}>Reject</button>
+                      <button onClick={() => alert(`Transfer Approved: ${t.qty} units of ${t.medicine} will go to ${t.to}.`)} className="btn-primary" style={{ fontSize: 13 }}>Approve Transfer</button>
+                      <button onClick={() => alert('Transfer Rejected.')} className="btn-ghost" style={{ fontSize: 13 }}>Reject</button>
                     </div>
                   )}
                 </div>
@@ -157,11 +282,14 @@ export default function SupplyChainPage() {
               <div style={{ fontSize: 48, marginBottom: 12 }}>📦</div>
               <div style={{ fontSize: 16, fontWeight: 600 }}>Returns & Disposal Tracking</div>
               <div style={{ fontSize: 13, marginTop: 6 }}>Log expired, damaged or recalled stock returns to suppliers</div>
-              <button className="btn-primary" style={{ marginTop: 20 }}><Plus size={14} /> Log Return</button>
+              <button onClick={() => setActionDrawer({ title: "Log Return", type: "Return" })} className="btn-primary" style={{ marginTop: 20 }}><Plus size={14} /> Log Return</button>
             </div>
           )}
         </div>
       </div>
+
+      {showAddSupplier && <AddSupplierDrawer onClose={() => setShowAddSupplier(false)} />}
+      {actionDrawer && <ActionDrawer title={actionDrawer.title} type={actionDrawer.type} onClose={() => setActionDrawer(null)} />}
     </div>
   );
 }

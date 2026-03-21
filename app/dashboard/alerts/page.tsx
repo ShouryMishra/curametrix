@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bell, AlertTriangle, Clock, ShieldAlert, Info, CheckCircle2, X, Phone, Mail } from "lucide-react";
+import { Bell, AlertTriangle, Clock, ShieldAlert, Info, CheckCircle2, X, Phone, Mail, Trash2 } from "lucide-react";
 import { mockAlerts } from "@/lib/mockData";
 import type { Alert, AlertType, AlertSeverity } from "@/types";
 
@@ -39,8 +39,87 @@ const extendedAlerts: Alert[] = [
   { id: "a7", type: "compliance", severity: "warning", title: "Drug Price Violation — Paracetamol 650mg", message: "Current dispensing price ₹18 exceeds DPCO ceiling price ₹14.50. Auto-compliance flagged.", status: "active", smsSent: true, emailSent: true, hospitalId: "hosp001", createdAt: new Date(Date.now() - 9000000) },
 ];
 
+function ManageContactsDrawer({ onClose }: { onClose: () => void }) {
+  const [contacts, setContacts] = useState([
+    { id: 1, name: "Dr. Sharma", role: "Admin", email: "admin@curametrix.com", phone: "+91 9876543210", sms: true, emailAlerts: true },
+    { id: 2, name: "Pharmacist Ravi", role: "Pharmacist", email: "ravi@curametrix.com", phone: "+91 9123456780", sms: true, emailAlerts: false },
+  ]);
+
+  const [newContact, setNewContact] = useState({ name: "", role: "Pharmacist", email: "", phone: "", sms: true, emailAlerts: true });
+
+  const handleAdd = () => {
+    if (!newContact.name || (!newContact.email && !newContact.phone)) return alert("Name and at least one contact method required.");
+    setContacts([...contacts, { id: Date.now(), ...newContact }]);
+    setNewContact({ name: "", role: "Pharmacist", email: "", phone: "", sms: true, emailAlerts: true });
+  };
+
+  const removeContact = (id: number) => setContacts(contacts.filter(c => c.id !== id));
+
+  return (
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="drawer" style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 450 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>Manage Alert Contacts</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+        </div>
+        
+        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 24 }}>
+          {/* Add New */}
+          <div style={{ background: "var(--bg)", padding: 16, borderRadius: 10, border: "1px solid var(--border)" }}>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Add New Contact</div>
+            <div style={{ display: "grid", gap: 10 }}>
+              <input className="input" placeholder="Name" value={newContact.name} onChange={e => setNewContact({...newContact, name: e.target.value})} />
+              <select className="select" value={newContact.role} onChange={e => setNewContact({...newContact, role: e.target.value})}>
+                <option value="Admin">Admin</option>
+                <option value="Manager">Manager</option>
+                <option value="Pharmacist">Pharmacist</option>
+              </select>
+              <input className="input" placeholder="Email Address" value={newContact.email} onChange={e => setNewContact({...newContact, email: e.target.value})} />
+              <input className="input" placeholder="Phone Number (e.g. +91...)" value={newContact.phone} onChange={e => setNewContact({...newContact, phone: e.target.value})} />
+              <div style={{ display: "flex", gap: 16, marginTop: 4 }}>
+                <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                  <input type="checkbox" checked={newContact.sms} onChange={e => setNewContact({...newContact, sms: e.target.checked})} /> SMS
+                </label>
+                <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+                  <input type="checkbox" checked={newContact.emailAlerts} onChange={e => setNewContact({...newContact, emailAlerts: e.target.checked})} /> Email
+                </label>
+              </div>
+              <button className="btn-primary" style={{ marginTop: 8 }} onClick={handleAdd}>Add Contact</button>
+            </div>
+          </div>
+
+          {/* List */}
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>Active Contacts</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              {contacts.map(c => (
+                <div key={c.id} style={{ border: "1px solid var(--border)", padding: 14, borderRadius: 10, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 600 }}>{c.name} <span style={{ fontSize: 11, fontWeight: 400, color: "var(--text-muted)", background: "#F1F5F9", padding: "2px 6px", borderRadius: 4 }}>{c.role}</span></div>
+                    <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+                      {c.email && <div>✉️ {c.email}</div>}
+                      {c.phone && <div>📞 {c.phone}</div>}
+                    </div>
+                    <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
+                      {c.sms && <span style={{ fontSize: 10, background: "#DCFCE7", color: "#15803D", padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>SMS Active</span>}
+                      {c.emailAlerts && <span style={{ fontSize: 10, background: "#DBEAFE", color: "#1D4ED8", padding: "2px 6px", borderRadius: 4, fontWeight: 600 }}>Email Active</span>}
+                    </div>
+                  </div>
+                  <button onClick={() => removeContact(c.id)} style={{ background: "none", border: "none", color: "#EF4444", cursor: "pointer", padding: 8 }}><Trash2 size={16} /></button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function AlertsPage() {
   const [activeTab, setActiveTab] = useState("all");
+  const [showContacts, setShowContacts] = useState(false);
   const [alerts, setAlerts] = useState(extendedAlerts);
 
   const filtered = alerts.filter(a => {
@@ -95,7 +174,7 @@ export default function AlertsPage() {
             <span style={{ fontSize: 11, color: "#64748B" }}>· All roles + weekly reports</span>
           </div>
         </div>
-        <button className="btn-secondary" style={{ fontSize: 13 }}>Manage Contacts</button>
+        <button className="btn-secondary" style={{ fontSize: 13 }} onClick={() => setShowContacts(true)}>Manage Contacts</button>
       </div>
 
       {/* Tabs */}
@@ -212,6 +291,8 @@ export default function AlertsPage() {
           })}
         </div>
       </div>
+
+      {showContacts && <ManageContactsDrawer onClose={() => setShowContacts(false)} />}
     </div>
   );
 }

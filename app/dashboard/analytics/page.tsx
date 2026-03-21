@@ -47,6 +47,10 @@ const tabs = ["Overview", "Financial P&L", "Wastage Analysis", "Fast/Slow Movers
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState("Overview");
 
+  const handleDownload = (type: "PDF" | "Excel") => {
+    alert(`Generating ${type} report for ${activeTab}... (Mock download).\n\nReal data export will be enabled once we connect the backing database.`);
+  };
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
@@ -65,8 +69,8 @@ export default function AnalyticsPage() {
             ))}
           </div>
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn-ghost" style={{ fontSize: 12, gap: 5 }}><Download size={13} /> PDF</button>
-            <button className="btn-ghost" style={{ fontSize: 12, gap: 5 }}><Download size={13} /> Excel</button>
+            <button className="btn-ghost" onClick={() => handleDownload("PDF")} style={{ fontSize: 12, gap: 5 }}><Download size={13} /> PDF</button>
+            <button className="btn-ghost" onClick={() => handleDownload("Excel")} style={{ fontSize: 12, gap: 5 }}><Download size={13} /> Excel</button>
           </div>
         </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Thermometer, Droplets, AlertTriangle, CheckCircle2, Activity } from "lucide-react";
+import { Thermometer, Droplets, AlertTriangle, CheckCircle2, Activity, Settings, X } from "lucide-react";
 
 const zones = [
   { id: "z1", name: "Main Refrigerator A", type: "Refrigerated", minTemp: 2, maxTemp: 8, current: 4.2, humidity: 58, status: "normal", medicines: 24 },
@@ -40,8 +40,70 @@ function TempGauge({ current, min, max, status }: { current: number; min: number
   );
 }
 
+function ColdChainSettingsDrawer({ zone, onClose }: { zone: any, onClose: () => void }) {
+  const [formData, setFormData] = useState({ ...zone });
+
+  const handleSave = () => {
+    onClose();
+    alert(`Configuration updated for ${zone.name}.\n\nNew Safe Range: ${formData.minTemp}°C to ${formData.maxTemp}°C\nTarget Humidity: ${formData.humidity}%\n\nThese changes will be written to the IoT controller once Firebase is connected.`);
+  };
+
+  return (
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="drawer" style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 450 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>Unit Configuration</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+        </div>
+        
+        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ padding: 16, background: "var(--bg)", borderRadius: 12, border: "1px solid var(--border)" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{zone.name}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Unit ID: {zone.id} · Type: {zone.type}</div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Unit Name</label>
+            <input className="input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Min Safe Temp (°C)</label>
+              <input type="number" className="input" value={formData.minTemp} onChange={e => setFormData({ ...formData, minTemp: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Max Safe Temp (°C)</label>
+              <input type="number" className="input" value={formData.maxTemp} onChange={e => setFormData({ ...formData, maxTemp: Number(e.target.value) })} />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Target Humidity (%)</label>
+            <input type="number" className="input" value={formData.humidity} onChange={e => setFormData({ ...formData, humidity: Number(e.target.value) })} />
+          </div>
+
+          <div style={{ padding: 16, background: "#FEF2F2", borderRadius: 12, border: "1px solid #FECACA", marginTop: 8 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "#DC2626", marginBottom: 4 }}>Alert Thresholds</div>
+            <div style={{ fontSize: 12, color: "#B91C1C" }}>
+              SMS & Email alerts will be instantly dispatched to the assigned Pharmacist if the IoT sensor reads a temperature outside the {formData.minTemp}°C – {formData.maxTemp}°C range for more than 5 minutes.
+            </div>
+          </div>
+
+          <div style={{ display: "flex", gap: 10, marginTop: "auto" }}>
+            <button className="btn-primary" onClick={handleSave} style={{ flex: 1, justifyContent: "center" }}>Save Configuration</button>
+            <button className="btn-secondary" onClick={onClose} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function ColdChainPage() {
   const [selected, setSelected] = useState(zones[0]);
+  const [editingZone, setEditingZone] = useState<any>(null);
   const breachCount = zones.filter(z => z.status === "breach").length;
   const warningCount = zones.filter(z => z.status === "warning").length;
 
@@ -92,9 +154,17 @@ export default function ColdChainPage() {
                 <div style={{ fontSize: 14, fontWeight: 700 }}>{zone.name}</div>
                 <div style={{ fontSize: 12, color: "var(--text-muted)" }}>{zone.type} · {zone.medicines} medicines</div>
               </div>
-              {zone.status === "breach" ? <AlertTriangle size={18} color="#EF4444" /> :
-               zone.status === "warning" ? <AlertTriangle size={18} color="#F59E0B" /> :
-               <CheckCircle2 size={18} color="#10B981" />}
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); setEditingZone(zone); }} 
+                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}
+                >
+                  <Settings size={16} />
+                </button>
+                {zone.status === "breach" ? <AlertTriangle size={18} color="#EF4444" /> :
+                 zone.status === "warning" ? <AlertTriangle size={18} color="#F59E0B" /> :
+                 <CheckCircle2 size={18} color="#10B981" />}
+              </div>
             </div>
             <TempGauge current={zone.current} min={zone.minTemp} max={zone.maxTemp} status={zone.status} />
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 10, fontSize: 12 }}>
@@ -133,6 +203,8 @@ export default function ColdChainPage() {
           </div>
         </div>
       </div>
+
+      {editingZone && <ColdChainSettingsDrawer zone={editingZone} onClose={() => setEditingZone(null)} />}
     </div>
   );
 }

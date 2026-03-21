@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, LineChart, Line } from "recharts";
-import { Brain, TrendingUp, Package, AlertTriangle, Zap, ChevronRight, Target } from "lucide-react";
+import { Brain, TrendingUp, Package, AlertTriangle, Zap, ChevronRight, Target, X } from "lucide-react";
 import { mockDemandPredictions } from "@/lib/mockData";
 import { formatCurrency } from "@/lib/utils";
 
@@ -54,7 +55,97 @@ function AccuracyGauge({ value }: { value: number }) {
   );
 }
 
+function WasteActionDrawer({ item, onClose }: { item: any, onClose: () => void }) {
+  const [action, setAction] = useState("transfer");
+  const [discount, setDiscount] = useState(20);
+  const [hospital, setHospital] = useState("District Hospital B");
+
+  const handleSave = () => {
+    onClose();
+    if (action === "transfer") {
+      alert(`Transfer Initiated: ${item.qty} units of ${item.name} to ${hospital}.`);
+    } else {
+      alert(`Discount Applied: ${item.name} is now ${discount}% off to accelerate sales.`);
+    }
+  };
+
+  return (
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="drawer" style={{ display: "flex", flexDirection: "column", width: "100%", maxWidth: 450 }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>Prevent Wastage</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+        </div>
+        
+        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div style={{ padding: 16, background: "var(--bg)", borderRadius: 12, border: "1px solid var(--border)" }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 4 }}>{item.name}</div>
+            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+              {item.qty} units · Batch {item.batch} <br/> 
+              <span style={{ color: "#DC2626", fontWeight: 600 }}>Expires in {item.expiry}</span>
+            </div>
+            <div style={{ fontSize: 18, fontWeight: 800, marginTop: 8, color: "#1E3A8A", fontFamily: "JetBrains Mono, monospace" }}>
+              Total Value: ₹{(item.value).toLocaleString("en-IN")}
+            </div>
+          </div>
+
+          <div>
+            <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Action</label>
+            <div style={{ display: "flex", gap: 8 }}>
+              {[{ id: "transfer", label: "Transfer to Branch" }, { id: "discount", label: "Apply Discount" }].map(s => (
+                <button 
+                  key={s.id} onClick={() => setAction(s.id)} 
+                  style={{
+                    flex: 1, padding: "8px 0", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer",
+                    border: action === s.id ? "2px solid var(--accent)" : "1px solid var(--border)",
+                    background: action === s.id ? "var(--accent-light)" : "white",
+                    color: action === s.id ? "var(--accent)" : "var(--text)",
+                    transition: "all 0.15s"
+                  }}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {action === "transfer" ? (
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Select Destination Hospital</label>
+              <select className="select" value={hospital} onChange={e => setHospital(e.target.value)} style={{ fontSize: 13 }}>
+                <option value="District Hospital B">District Hospital B (High Demand)</option>
+                <option value="Community Clinic North">Community Clinic North (Medium Demand)</option>
+                <option value="City General Hospital">City General Hospital</option>
+              </select>
+              <div style={{ fontSize: 12, color: "#10B981", marginTop: 6, fontWeight: 600 }}>✨ AI confirms shortage at District Hospital B</div>
+            </div>
+          ) : (
+            <div>
+              <label style={{ fontSize: 13, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Discount Percentage ({discount}%)</label>
+              <input type="range" min="5" max="50" step="5" value={discount} onChange={e => setDiscount(Number(e.target.value))} style={{ width: "100%", accentColor: "var(--accent)" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+                <span>5%</span><span>50%</span>
+              </div>
+              <div style={{ fontSize: 12, color: "#D97706", marginTop: 8, fontWeight: 600, padding: "8px 10px", background: "#FFFBEB", borderRadius: 6, border: "1px solid #FCD34D" }}>
+                Applying a {discount}% discount reduces potential loss to ₹{Math.round(item.value * (1 - discount/100)).toLocaleString("en-IN")} instead of full write-off.
+              </div>
+            </div>
+          )}
+
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <button className="btn-primary" onClick={handleSave} style={{ flex: 1, justifyContent: "center" }}>{action === "transfer" ? "Initiate Transfer" : "Apply POS Discount"}</button>
+            <button className="btn-secondary" onClick={onClose} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 export default function AIInsightsPage() {
+  const [selectedActionItem, setSelectedActionItem] = useState<any>(null);
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
 
@@ -134,7 +225,7 @@ export default function AIInsightsPage() {
                   <div style={{ fontSize: 20, fontWeight: 800, color: pred.daysUntilStockout <= 10 ? "#DC2626" : "#15803D", fontFamily: "JetBrains Mono, monospace" }}>{pred.daysUntilStockout}d</div>
                   <div style={{ fontSize: 10, color: "var(--text-muted)", fontWeight: 600 }}>STOCKOUT</div>
                 </div>
-                <button className="btn-primary" style={{ fontSize: 13 }}>
+                <button onClick={() => alert(`Redirecting to Supply Chain to draft a Purchase Order for ${pred.reorderSuggested} units of ${pred.medicineName}...`)} className="btn-primary" style={{ fontSize: 13 }}>
                   Order {pred.reorderSuggested}
                 </button>
               </div>
@@ -223,7 +314,7 @@ export default function AIInsightsPage() {
                   {w.qty} units · Batch {w.batch} · Expires in {w.expiry}
                 </div>
                 <div style={{ marginTop: 8 }}>
-                  <button className="btn-primary" style={{ fontSize: 11, padding: "4px 10px" }}>Transfer / Discount</button>
+                  <button onClick={() => setSelectedActionItem(w)} className="btn-primary" style={{ fontSize: 11, padding: "4px 10px" }}>Transfer / Discount</button>
                 </div>
               </div>
             ))}
@@ -236,6 +327,8 @@ export default function AIInsightsPage() {
           </div>
         </div>
       </div>
+
+      {selectedActionItem && <WasteActionDrawer item={selectedActionItem} onClose={() => setSelectedActionItem(null)} />}
     </div>
   );
 }

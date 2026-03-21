@@ -37,78 +37,195 @@ function StockBar({ current, max, status }: { current: number; max: number; stat
 }
 
 function BatchDrawer({ medicine, onClose }: { medicine: Medicine; onClose: () => void }) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({ ...medicine });
   const warning = getHazardWarning(medicine.hazardType);
+
+  const handleSave = () => {
+    // Fake save to simulate UI before Firebase integration
+    setIsEditing(false);
+    alert("Saved (Mock): Changes will be permanently saved once Firebase is connected.");
+  };
+
   return (
     <>
       <div className="modal-backdrop" onClick={onClose} />
-      <div className="drawer">
+      <div className="drawer" style={{ display: "flex", flexDirection: "column" }}>
         <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <div style={{ fontSize: 17, fontWeight: 700 }}>{medicine.name}</div>
-            <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{medicine.brand} · {medicine.formulation} · {medicine.strength}</div>
+            <div style={{ fontSize: 17, fontWeight: 700 }}>{isEditing ? "Edit Medicine Details" : formData.name}</div>
+            {!isEditing && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>{formData.brand} · {formData.formulation} · {formData.strength}</div>}
           </div>
           <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
         </div>
 
-        <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
-          {/* Hazard Warning */}
-          {warning && (
-            <div style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "12px 14px",
-              background: medicine.hazardLevel === "high" ? "#FEF2F2" : "#FFFBEB",
-              border: `1px solid ${medicine.hazardLevel === "high" ? "#FECACA" : "#FCD34D"}`,
-              borderRadius: 10,
-            }}>
-              <AlertTriangle size={18} color={medicine.hazardLevel === "high" ? "#DC2626" : "#D97706"} />
-              <span style={{ fontSize: 14, fontWeight: 600, color: medicine.hazardLevel === "high" ? "#B91C1C" : "#92400E" }}>
-                {warning}
-              </span>
-            </div>
-          )}
-
-          {/* Info Grid */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-            {[
-              { label: "Category", value: medicine.category },
-              { label: "Unit", value: medicine.unit },
-              { label: "Total Stock", value: `${medicine.totalQuantity} ${medicine.unit}` },
-              { label: "Reorder Level", value: `${medicine.reorderLevel} ${medicine.unit}` },
-              { label: "Unit Price", value: `₹${medicine.unitPrice}` },
-              { label: "MRP", value: `₹${medicine.mrp}` },
-              { label: "Storage", value: medicine.storageCondition.replace("_", " ") },
-              { label: "Critical Drug", value: medicine.isCritical ? "✅ Yes" : "No" },
-            ].map(({ label, value }) => (
-              <div key={label} style={{ padding: "10px 12px", background: "var(--bg)", borderRadius: 8 }}>
-                <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{label}</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textTransform: "capitalize" }}>{value}</div>
+        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          {isEditing ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Medicine Name</label>
+                <input className="input" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
               </div>
-            ))}
-          </div>
-
-          {/* Stock Level */}
-          <div style={{ padding: 14, background: "var(--bg)", borderRadius: 10 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Stock Level</div>
-            <StockBar current={medicine.totalQuantity} max={medicine.maxStockLevel} status={medicine.status} />
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
-              <span>0</span><span>Reorder: {medicine.reorderLevel}</span><span>Max: {medicine.maxStockLevel}</span>
+              <div>
+                <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Brand / Manufacturer</label>
+                <input className="input" value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} />
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Total Qty</label>
+                  <input type="number" className="input" value={formData.totalQuantity} onChange={e => setFormData({ ...formData, totalQuantity: Number(e.target.value) })} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Reorder Level</label>
+                  <input type="number" className="input" value={formData.reorderLevel} onChange={e => setFormData({ ...formData, reorderLevel: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Unit Price (₹)</label>
+                  <input type="number" step="0.01" className="input" value={formData.unitPrice} onChange={e => setFormData({ ...formData, unitPrice: Number(e.target.value) })} />
+                </div>
+                <div>
+                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>MRP (₹)</label>
+                  <input type="number" step="0.01" className="input" value={formData.mrp} onChange={e => setFormData({ ...formData, mrp: Number(e.target.value) })} />
+                </div>
+              </div>
+              
+              <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+                <button className="btn-primary" onClick={handleSave} style={{ flex: 1, justifyContent: "center" }}>Save Changes</button>
+                <button className="btn-secondary" onClick={() => setIsEditing(false)} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Hazard Warning */}
+              {warning && (
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "12px 14px",
+                  background: formData.hazardLevel === "high" ? "#FEF2F2" : "#FFFBEB",
+                  border: `1px solid ${formData.hazardLevel === "high" ? "#FECACA" : "#FCD34D"}`,
+                  borderRadius: 10,
+                }}>
+                  <AlertTriangle size={18} color={formData.hazardLevel === "high" ? "#DC2626" : "#D97706"} />
+                  <span style={{ fontSize: 14, fontWeight: 600, color: formData.hazardLevel === "high" ? "#B91C1C" : "#92400E" }}>
+                    {warning}
+                  </span>
+                </div>
+              )}
 
-          {/* Temperature info */}
-          {medicine.temperatureMin !== undefined && (
-            <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#EFF6FF", borderRadius: 10, border: "1px solid #BFDBFE" }}>
-              <Thermometer size={16} color="#2563EB" />
-              <span style={{ fontSize: 13, fontWeight: 600, color: "#1D4ED8" }}>
-                Storage: {medicine.temperatureMin}°C – {medicine.temperatureMax}°C
-              </span>
-            </div>
+              {/* Info Grid */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                {[
+                  { label: "Category", value: formData.category },
+                  { label: "Unit", value: formData.unit },
+                  { label: "Total Stock", value: `${formData.totalQuantity} ${formData.unit}` },
+                  { label: "Reorder Level", value: `${formData.reorderLevel} ${formData.unit}` },
+                  { label: "Unit Price", value: `₹${formData.unitPrice}` },
+                  { label: "MRP", value: `₹${formData.mrp}` },
+                  { label: "Storage", value: formData.storageCondition.replace("_", " ") },
+                  { label: "Critical Drug", value: formData.isCritical ? "✅ Yes" : "No" },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ padding: "10px 12px", background: "var(--bg)", borderRadius: 8 }}>
+                    <div style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>{label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "var(--text)", textTransform: "capitalize" }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Stock Level */}
+              <div style={{ padding: 14, background: "var(--bg)", borderRadius: 10 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Stock Level</div>
+                <StockBar current={formData.totalQuantity} max={formData.maxStockLevel} status={formData.status} />
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "var(--text-muted)", marginTop: 6 }}>
+                  <span>0</span><span>Reorder: {formData.reorderLevel}</span><span>Max: {formData.maxStockLevel}</span>
+                </div>
+              </div>
+
+              {/* Temperature info */}
+              {formData.temperatureMin !== undefined && (
+                <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "#EFF6FF", borderRadius: 10, border: "1px solid #BFDBFE" }}>
+                  <Thermometer size={16} color="#2563EB" />
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#1D4ED8" }}>
+                    Storage: {formData.temperatureMin}°C – {formData.temperatureMax}°C
+                  </span>
+                </div>
+              )}
+
+              {/* Action buttons */}
+              <div style={{ display: "flex", gap: 10 }}>
+                <button className="btn-primary" onClick={() => setIsEditing(true)} style={{ flex: 1, justifyContent: "center" }}><Edit size={14} /> Edit</button>
+                <button className="btn-secondary" style={{ flex: 1, justifyContent: "center" }}><Package size={14} /> Add Stock</button>
+              </div>
+            </>
           )}
+        </div>
+      </div>
+    </>
+  );
+}
 
-          {/* Action buttons */}
-          <div style={{ display: "flex", gap: 10 }}>
-            <button className="btn-primary" style={{ flex: 1, justifyContent: "center" }}><Edit size={14} /> Edit</button>
-            <button className="btn-secondary" style={{ flex: 1, justifyContent: "center" }}><Package size={14} /> Add Stock</button>
+function AddMedicineDrawer({ onClose }: { onClose: () => void }) {
+  const [formData, setFormData] = useState({
+    name: "", brand: "", formulation: "", strength: "", category: "general",
+    totalQuantity: 0, reorderLevel: 0, unitPrice: 0, mrp: 0
+  });
+
+  const handleSave = () => {
+    onClose();
+    alert("Medicine added (Mock). Changes will permanently save once Firebase is connected.");
+  };
+
+  return (
+    <>
+      <div className="modal-backdrop" onClick={onClose} />
+      <div className="drawer" style={{ display: "flex", flexDirection: "column" }}>
+        <div style={{ padding: "20px 24px", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ fontSize: 17, fontWeight: 700 }}>Add New Medicine</div>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)" }}><X size={20} /></button>
+        </div>
+        <div style={{ padding: 24, flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Medicine Name</label>
+            <input className="input" placeholder="e.g. Paracetamol" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
+          </div>
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Brand / Manufacturer</label>
+            <input className="input" placeholder="e.g. GSK" value={formData.brand} onChange={e => setFormData({ ...formData, brand: e.target.value })} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Formulation</label>
+              <input className="input" placeholder="e.g. Tablet" value={formData.formulation} onChange={e => setFormData({ ...formData, formulation: e.target.value })} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Strength</label>
+              <input className="input" placeholder="e.g. 500mg" value={formData.strength} onChange={e => setFormData({ ...formData, strength: e.target.value })} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Total Qty</label>
+              <input type="number" className="input" value={formData.totalQuantity} onChange={e => setFormData({ ...formData, totalQuantity: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Reorder Level</label>
+              <input type="number" className="input" value={formData.reorderLevel} onChange={e => setFormData({ ...formData, reorderLevel: Number(e.target.value) })} />
+            </div>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>Unit Price (₹)</label>
+              <input type="number" step="0.01" className="input" value={formData.unitPrice} onChange={e => setFormData({ ...formData, unitPrice: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-muted)", marginBottom: 4, display: "block" }}>MRP (₹)</label>
+              <input type="number" step="0.01" className="input" value={formData.mrp} onChange={e => setFormData({ ...formData, mrp: Number(e.target.value) })} />
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+            <button className="btn-primary" onClick={handleSave} style={{ flex: 1, justifyContent: "center" }}>Add Medicine</button>
+            <button className="btn-secondary" onClick={onClose} style={{ flex: 1, justifyContent: "center" }}>Cancel</button>
           </div>
         </div>
       </div>
@@ -166,22 +283,22 @@ export default function InventoryPage() {
         <div style={{ position: "relative", flex: 1, minWidth: 200 }}>
           <Search size={14} style={{ position: "absolute", left: 11, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
           <input className="input" value={search} onChange={e => setSearch(e.target.value)}
-            placeholder="Search by name, brand, generic…" style={{ paddingLeft: 34, height: 36, fontSize: 13 }} />
+            placeholder="Search by name, brand, generic…" style={{ paddingLeft: 34, fontSize: 13 }} />
         </div>
-        <select className="select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ height: 36, fontSize: 13 }}>
+        <select className="select" value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)} style={{ fontSize: 13 }}>
           <option value="all">All Categories</option>
           {["antibiotic","antidiabetic","cardiovascular","analgesic","hormonal","oncology","vaccine","cold_chain","controlled","general"].map(c => (
             <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
           ))}
         </select>
-        <select className="select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ height: 36, fontSize: 13 }}>
+        <select className="select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)} style={{ fontSize: 13 }}>
           <option value="all">All Status</option>
           <option value="in_stock">In Stock</option>
           <option value="low_stock">Low Stock</option>
           <option value="critical">Critical</option>
           <option value="out_of_stock">Out of Stock</option>
         </select>
-        <select className="select" value={hazardFilter} onChange={e => setHazardFilter(e.target.value)} style={{ height: 36, fontSize: 13 }}>
+        <select className="select" value={hazardFilter} onChange={e => setHazardFilter(e.target.value)} style={{ fontSize: 13 }}>
           <option value="all">All Risk Levels</option>
           <option value="high">🔴 High Risk</option>
           <option value="medium">🟡 Medium Risk</option>
@@ -189,7 +306,18 @@ export default function InventoryPage() {
         </select>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
           <button className="btn-ghost" style={{ fontSize: 13, gap: 6 }}><ScanLine size={14} /> Scanner</button>
-          <button className="btn-ghost" style={{ fontSize: 13, gap: 6 }}><Upload size={14} /> Bulk Upload</button>
+          <button className="btn-ghost" style={{ fontSize: 13, gap: 6 }} onClick={() => {
+            const input = document.createElement("input");
+            input.type = "file";
+            input.accept = ".csv,.xlsx";
+            input.onchange = (e) => {
+              const file = (e.target as HTMLInputElement).files?.[0];
+              if (file) alert(`File selected: ${file.name}. Actual CSV parsing and bulk upload will occur once Firebase is connected.`);
+            };
+            input.click();
+          }}>
+            <Upload size={14} /> Bulk Upload
+          </button>
           <button className="btn-primary" onClick={() => setShowAdd(true)} style={{ fontSize: 13 }}><Plus size={14} /> Add Medicine</button>
         </div>
       </div>
@@ -283,6 +411,9 @@ export default function InventoryPage() {
 
       {/* Batch Drawer */}
       {selected && <BatchDrawer medicine={selected} onClose={() => setSelected(null)} />}
+
+      {/* Add Medicine Drawer */}
+      {showAdd && <AddMedicineDrawer onClose={() => setShowAdd(false)} />}
     </div>
   );
 }

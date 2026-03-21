@@ -15,6 +15,7 @@ const navSections = [
     label: "Overview",
     items: [
       { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
+      { href: "/dashboard/billing", icon: LayoutDashboard, label: "Billing & POS" },
     ],
   },
   {
@@ -42,7 +43,6 @@ const navSections = [
     label: "Operations",
     items: [
       { href: "/dashboard/supply-chain", icon: Truck, label: "Supply Chain" },
-      { href: "/dashboard/transfers", icon: ArrowLeftRight, label: "Hospital Transfers" },
       { href: "/dashboard/cold-chain", icon: Thermometer, label: "Cold Chain" },
     ],
   },

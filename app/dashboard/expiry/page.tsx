@@ -141,7 +141,10 @@ export default function ExpiryPage() {
               </div>
               <div style={{ display: "flex", gap: 10 }}>
                 <button className="btn-secondary" style={{ flex: 1 }} onClick={() => setShowFefoModal(false)}>Cancel</button>
-                <button className="btn-primary" style={{ flex: 1, justifyContent: "center" }}>
+                <button className="btn-primary" style={{ flex: 1, justifyContent: "center" }} onClick={() => {
+                  alert(`Dispensing ${fefoSuggestion.qty} units of ${fefoSuggestion.medicineName} (Batch ${fefoSuggestion.batchNo}). This will deduct from stock once Firebase is linked.`);
+                  setShowFefoModal(false);
+                }}>
                   <Zap size={14} /> Confirm Dispense
                 </button>
               </div>
@@ -201,7 +204,11 @@ export default function ExpiryPage() {
                       </button>
                     )}
                     {batch.daysLeft <= 0 && (
-                      <button className="btn-danger" style={{ fontSize: 12, padding: "5px 10px" }}>
+                      <button className="btn-danger" style={{ fontSize: 12, padding: "5px 10px" }} onClick={() => {
+                        if (window.confirm(`Are you sure you want to log the disposal of Batch ${batch.batchNo} (${batch.medicineName})?`)) {
+                          alert(`Batch ${batch.batchNo} disposed successfully. This will permanently remove it from the system inventory when Firebase is connected.`);
+                        }
+                      }}>
                         Dispose
                       </button>
                     )}

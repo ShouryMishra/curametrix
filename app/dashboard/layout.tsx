@@ -13,7 +13,6 @@ const pageTitles: Record<string, string> = {
   "/dashboard/ai-insights": "AI Insights Hub",
   "/dashboard/analytics": "Analytics & Reports",
   "/dashboard/supply-chain": "Supply Chain",
-  "/dashboard/transfers": "Hospital Transfers",
   "/dashboard/cold-chain": "Cold Chain Monitoring",
   "/dashboard/compliance": "Compliance Engine",
   "/dashboard/fraud": "Fraud Detection",

@@ -69,7 +69,7 @@ export default function DispensingPage() {
 
   const filteredLogs = mockDispensingLogs.filter(log => 
     log.medicineName.toLowerCase().includes(search.toLowerCase()) || 
-    log.patientName.toLowerCase().includes(search.toLowerCase()) ||
+    (log.patientName?.toLowerCase().includes(search.toLowerCase()) ?? false) ||
     log.batchNumber.toLowerCase().includes(search.toLowerCase())
   );
 

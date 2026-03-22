@@ -9,11 +9,14 @@ import {
   ShieldAlert, Brain, ChevronRight, CheckCircle, Zap,
   ArrowUpRight, ArrowDownRight
 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { fetchWithAuth } from "@/lib/api";
 import {
-  mockKPIs, mockAlerts, mockDispensingLogs,
-  mockDemandPredictions, stockUsageChartData,
+  mockAlerts, mockDispensingLogs, mockDemandPredictions,
+  stockUsageChartData,
   expiryTimelineData, categoryBreakdownData
 } from "@/lib/mockData";
+import { DashboardKPIs, Alert as AlertType } from "@/types";
 import { formatLargeNumber, formatCurrency } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
@@ -66,9 +69,9 @@ function KPICard({
 }
 
 // ─── Alert Strip Item ─────────────────────────────────────────────────────────
-function AlertStripItem({ alert }: { alert: typeof mockAlerts[0] }) {
-  const colors = { critical: "#EF4444", warning: "#F59E0B", info: "#0EA5E9" };
-  const bg = { critical: "#FEF2F2", warning: "#FFFBEB", info: "#F0F9FF" };
+function AlertStripItem({ alert }: { alert: AlertType }) {
+  const colors: Record<string, string> = { critical: "#EF4444", warning: "#F59E0B", info: "#0EA5E9" };
+  const bg: Record<string, string> = { critical: "#FEF2F2", warning: "#FFFBEB", info: "#F0F9FF" };
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 10,
@@ -111,10 +114,65 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
+const FALLBACK_KPIS: DashboardKPIs = {
+  totalStockValue: 2485000,
+  totalItems: 4823,
+  lowStockCount: 12,
+  outOfStockCount: 3,
+  expiringSoon: 8,
+  forecastAccuracy: 94,
+  inventoryTurnoverRate: 1.2,
+  stockEfficiency: 88,
+  expiryWastageValue: 4500,
+  pendingOrders: 3,
+  fraudAlerts: 0,
+  categoryBreakdown: [
+    { name: "Antibiotic", value: 28, color: "#0EA5E9" },
+    { name: "Cardiovascular", value: 22, color: "#1E3A8A" },
+    { name: "Antidiabetic", value: 18, color: "#10B981" },
+    { name: "Analgesic", value: 15, color: "#F59E0B" },
+    { name: "Other", value: 17, color: "#94A3B8" },
+  ],
+};
+
 export default function DashboardPage() {
   const router = useRouter();
-  const kpi = mockKPIs;
-  const criticalAlerts = mockAlerts.filter(a => a.severity === "critical" && a.status === "active");
+  const [kpi, setKpi] = useState<DashboardKPIs>(FALLBACK_KPIS);
+  const [alerts, setAlerts] = useState<AlertType[]>(mockAlerts);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [kpiResult, alertResult] = await Promise.allSettled([
+          fetchWithAuth('/api/dashboard/kpis'),
+          fetchWithAuth('/api/alerts')
+        ]);
+
+        if (kpiResult.status === 'fulfilled') {
+          const kpiData = await kpiResult.value.json();
+          if (kpiData.kpis) setKpi(kpiData.kpis);
+        }
+
+        if (alertResult.status === 'fulfilled') {
+          const alertData = await alertResult.value.json();
+          if (alertData.alerts?.length > 0) setAlerts(alertData.alerts);
+        }
+      } catch (err) {
+        console.error("Failed to fetch dashboard data:", err);
+        // Keep fallback data already set in state
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div style={{ padding: 40, textAlign: "center", color: "var(--text-muted)" }}>Loading Dashboard...</div>;
+  }
+
+  const criticalAlerts = alerts.filter(a => a.severity === "critical" && a.status === "active");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -255,7 +313,7 @@ export default function DashboardPage() {
               <XAxis dataKey="week" tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: "#64748B" }} axisLine={false} tickLine={false} />
               <Tooltip
-                formatter={(v: any, name: string) => [
+                formatter={(v: any, name: any) => [
                   name === "value" ? formatCurrency(v) : `${v} items`, name === "value" ? "Est. Loss" : "Items"
                 ]}
                 contentStyle={{ borderRadius: 8, border: "1px solid var(--border)", fontSize: 13 }}
@@ -274,19 +332,19 @@ export default function DashboardPage() {
           <div style={{ fontSize: 12, color: "var(--text-muted)", marginBottom: 12 }}>Stock distribution %</div>
           <ResponsiveContainer width="100%" height={180}>
             <PieChart>
-              <Pie data={categoryBreakdownData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
+              <Pie data={kpi.categoryBreakdown || categoryBreakdownData} cx="50%" cy="50%" innerRadius={50} outerRadius={80}
                 dataKey="value" paddingAngle={2}>
-                {categoryBreakdownData.map((entry, i) => (
-                  <Cell key={i} fill={entry.color} />
+                {(kpi.categoryBreakdown || categoryBreakdownData).map((entry: any, i: number) => (
+                  <Cell key={i} fill={entry.color || "#0EA5E9"} />
                 ))}
               </Pie>
               <Tooltip formatter={(v: any) => [`${v}%`, "Share"]} contentStyle={{ borderRadius: 8, fontSize: 13 }} />
             </PieChart>
           </ResponsiveContainer>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {categoryBreakdownData.map(c => (
+            {(kpi.categoryBreakdown || categoryBreakdownData).map((c: any) => (
               <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12 }}>
-                <div style={{ width: 8, height: 8, borderRadius: 2, background: c.color, flexShrink: 0 }} />
+                <div style={{ width: 8, height: 8, borderRadius: 2, background: c.color || "#0EA5E9", flexShrink: 0 }} />
                 <span style={{ color: "var(--text-muted)", flex: 1 }}>{c.name}</span>
                 <span style={{ fontWeight: 700, color: "var(--text)", fontFamily: "JetBrains Mono, monospace" }}>{c.value}%</span>
               </div>

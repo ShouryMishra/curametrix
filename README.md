@@ -2,7 +2,7 @@
 
 <img src="public/favicon.ico" width="80" alt="Curametrix Logo" />
 
-# 🏥 Curametrix
+# Curametrix
 
 ### AI-Powered Hospital Pharmacy Inventory Management System
 
@@ -16,7 +16,7 @@
 
 ---
 
-## 🚀 Live Demo
+## Live Demo
 
 > **[https://curametrix-coral.vercel.app/dashboard](https://curametrix-coral.vercel.app/dashboard)**
 
@@ -24,52 +24,52 @@ Use the **Quick Demo Login** buttons on the login screen to explore the system i
 
 | Role | Access Level |
 |------|-------------|
-| 👑 Admin | Full access to all modules including user management and fraud detection |
-| 🧑‍💼 Store Manager | Inventory, supply chain, and purchase orders |
-| 💊 Pharmacist | Dispensing, FEFO recommendations, and billing |
-| 👁️ Viewer | Read-only access to all dashboards |
+| Admin | Full access to all modules including user management and fraud detection |
+| Store Manager | Inventory, supply chain, and purchase orders |
+| Pharmacist | Dispensing, FEFO recommendations, and billing |
+| Viewer | Read-only access to all dashboards |
 
 </div>
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🤖 AI & Machine Learning
+### AI & Machine Learning
 - **Demand Forecasting** — Random Forest model (scikit-learn) trained on real Indian hospital pharmacy datasets with **91%+ accuracy**
 - **Smart Reorder Suggestions** — AI auto-calculates optimal purchase quantities based on seasonal trends and historical demand
 - **Anomaly Detection** — Identifies unusual dispensing patterns and flags potential fraud
 
-### 💊 Pharmacy Operations
+### Pharmacy Operations
 - **FEFO Dispensing** — First Expired, First Out batch selection enforced automatically at point of dispense
 - **Multi-Batch Tracking** — Track every batch with expiry dates, batch numbers, and manufacturer details
 - **Bulk CSV Upload** — Import entire drug catalogs in seconds via drag-and-drop
 - **Real-time Stock Monitoring** — Live inventory levels with configurable low-stock thresholds
 
-### 🚨 Alerts & Compliance
+### Alerts & Compliance
 - **Critical Alert Dashboard** — Color-coded severity system (Critical / Warning / Info)
 - **SMS Notifications** via Twilio — Instant pharmacist alerts for stockouts and temperature breaches
 - **Email Notifications** via Resend — Automated digest reports and emergency broadcasts
 - **Immutable Audit Trail** — Every drug dispensed, every user action is logged permanently for HIPAA compliance
 
-### 💳 Billing & POS
+### Billing & POS
 - **Point-of-Sale Interface** — Full cart system with medicine search, quantity management, and receipt generation
 - **GST-compliant Billing** — Automatic tax calculation per medicine category
 - **Payment Processing** — Cash, card, and insurance payment modes
 
-### 🌡️ Cold Chain Management
+### Cold Chain Management
 - **IoT Temperature Monitoring** — Real-time sensor readings for refrigeration zones
 - **Breach Detection** — Instant alert if fridge temperature exceeds safe thresholds (2–8°C)
 - **Historical Log** — Full temperature audit history per monitoring zone
 
-### 🔐 Security & Fraud Detection
+### Security & Fraud Detection
 - **Firebase JWT Authentication** — Every API call is verified server-side via Admin SDK
 - **Role-Based Access Control** — 4 distinct roles with granular permissions
 - **Fraud Intelligence Module** — Detects opioid over-dispensing, ghost patient entries, and duplicate billing patterns
 
 ---
 
-## 🏗️ Tech Stack
+## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
@@ -90,61 +90,61 @@ Use the **Quick Demo Login** buttons on the login screen to explore the system i
 
 ---
 
-## 📐 System Architecture
+## System Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                    Browser / User                    │
-└──────────────────────┬──────────────────────────────┘
-                       │ HTTPS
-┌──────────────────────▼──────────────────────────────┐
-│         Next.js 16 App (Vercel Serverless)           │
-│  ┌─────────────────┐   ┌──────────────────────────┐ │
-│  │  Pages (React)  │   │  API Routes (/app/api/*)  │ │
-│  │  14 Dashboards  │   │  11 Protected Endpoints   │ │
-│  └────────┬────────┘   └────────────┬─────────────┘ │
-└───────────┼──────────────────────── ┼───────────────┘
-            │                         │ Bearer JWT
-┌───────────▼──────────┐  ┌───────────▼──────────────┐
-│   Firebase Auth      │  │   Cloud Firestore        │
-│   (ID Tokens)        │  │   (Real-time Database)   │
-└──────────────────────┘  └──────────────────────────┘
-                                       │
-                          ┌────────────▼─────────────┐
-                          │   Python ML Model         │
-                          │   (Random Forest)         │
-                          │   /api/ai/generate-orders │
-                          └──────────────────────────┘
++-----------------------------------------------------+
+|                    Browser / User                    |
++----------------------+------------------------------+
+                       | HTTPS
++----------------------v------------------------------+
+|         Next.js 16 App (Vercel Serverless)          |
+|  +-----------------+   +--------------------------+ |
+|  |  Pages (React)  |   |  API Routes (/app/api/*) | |
+|  |  14 Dashboards  |   |  11 Protected Endpoints  | |
+|  +--------+--------+   +------------+-------------+ |
++-----------|--------------------------|---------------+
+            |                         | Bearer JWT
++-----------v----------+  +-----------v--------------+
+|   Firebase Auth      |  |   Cloud Firestore        |
+|   (ID Tokens)        |  |   (Real-time Database)   |
++----------------------+  +----------------------+---+
+                                                 |
+                               +-----------------v--------+
+                               |   Python ML Model        |
+                               |   (Random Forest)        |
+                               |   /api/ai/generate-orders|
+                               +--------------------------+
 ```
 
 ---
 
-## 📦 Dashboard Modules
+## Dashboard Modules
 
 | Module | Route | Description |
 |--------|-------|-------------|
-| 🏠 Overview | `/dashboard` | KPI cards, charts, AI reorder alerts |
-| 💊 Inventory | `/dashboard/inventory` | Full drug catalog + bulk upload |
-| ⏰ Expiry Tracker | `/dashboard/expiry` | FEFO tool, expiry timeline |
-| 🚨 Alerts | `/dashboard/alerts` | Notification center |
-| 📋 Dispensing | `/dashboard/dispensing` | Dispense logs + new dispense drawer |
-| 📊 Analytics | `/dashboard/analytics` | Revenue, wastage, demand charts |
-| 🚚 Supply Chain | `/dashboard/supply-chain` | Purchase orders, transfers |
-| 💳 Billing / POS | `/dashboard/billing` | Point-of-sale cart |
-| 🤖 AI Insights | `/dashboard/ai-insights` | ML demand forecasts |
-| 📜 Audit Log | `/dashboard/audit` | Immutable compliance trail |
-| 🕵️ Fraud Detection | `/dashboard/fraud` | Anomaly investigation |
-| 👥 User Management | `/dashboard/users` | Staff roles & permissions |
-| 🌡️ Cold Chain | `/dashboard/cold-chain` | IoT temperature monitoring |
-| ⚙️ Settings | `/dashboard/settings` | Twilio, Resend, Firebase config |
+| Overview | `/dashboard` | KPI cards, charts, AI reorder alerts |
+| Inventory | `/dashboard/inventory` | Full drug catalog + bulk upload |
+| Expiry Tracker | `/dashboard/expiry` | FEFO tool, expiry timeline |
+| Alerts | `/dashboard/alerts` | Notification center |
+| Dispensing | `/dashboard/dispensing` | Dispense logs + new dispense drawer |
+| Analytics | `/dashboard/analytics` | Revenue, wastage, demand charts |
+| Supply Chain | `/dashboard/supply-chain` | Purchase orders, transfers |
+| Billing / POS | `/dashboard/billing` | Point-of-sale cart |
+| AI Insights | `/dashboard/ai-insights` | ML demand forecasts |
+| Audit Log | `/dashboard/audit` | Immutable compliance trail |
+| Fraud Detection | `/dashboard/fraud` | Anomaly investigation |
+| User Management | `/dashboard/users` | Staff roles & permissions |
+| Cold Chain | `/dashboard/cold-chain` | IoT temperature monitoring |
+| Settings | `/dashboard/settings` | Twilio, Resend, Firebase config |
 
 ---
 
-## 🏁 Getting Started (Local Development)
+## Getting Started (Local Development)
 
 ### Prerequisites
-- Node.js ≥ 18
-- npm ≥ 9
+- Node.js >= 18
+- npm >= 9
 - A Firebase project (with Auth + Firestore enabled)
 
 ### 1. Clone the repository
@@ -181,7 +181,7 @@ TWILIO_PHONE=+1415xxxxxxx
 RESEND_API_KEY=re_xxxxxxxxxxxx
 ```
 
-> 💡 **Don't have Firebase?** The app works fully without it using built-in high-fidelity mock data. Just skip this step and run the dev server.
+> **Note:** The app works fully without Firebase using built-in high-fidelity mock data. Skip this step and run the dev server for a demo experience.
 
 ### 4. Start the development server
 ```bash
@@ -191,7 +191,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 🤖 ML Model Training (Optional)
+## ML Model Training (Optional)
 
 The AI demand forecasting runs off a pre-trained scikit-learn model. To retrain on your own data:
 
@@ -205,7 +205,7 @@ This will generate `trained_prediction_model.joblib` which the `/api/ai/generate
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 curametrix/
@@ -238,9 +238,9 @@ curametrix/
 
 ---
 
-## 🙏 Credits
+## Credits
 
-Built with ❤️ for the healthcare industry.
+Built for the healthcare industry.
 
 - **Frontend & Backend:** [ShouryMishra](https://github.com/ShouryMishra)
 - **ML Model & Datasets:** [krissp-momo](https://github.com/krissp-momo)
@@ -251,7 +251,7 @@ Built with ❤️ for the healthcare industry.
 
 <div align="center">
 
-**[🔗 View Live Demo →](https://curametrix-coral.vercel.app/dashboard)**
+**[View Live Demo](https://curametrix-coral.vercel.app/dashboard)**
 
 *Curametrix — Smarter Hospital Pharmacy Management*
 

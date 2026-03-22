@@ -15,6 +15,7 @@ import {
   expiryTimelineData, categoryBreakdownData
 } from "@/lib/mockData";
 import { formatLargeNumber, formatCurrency } from "@/lib/utils";
+import { useRouter } from "next/navigation";
 
 // ─── KPI Card ─────────────────────────────────────────────────────────────────
 function KPICard({
@@ -111,6 +112,7 @@ function CustomTooltip({ active, payload, label }: any) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function DashboardPage() {
+  const router = useRouter();
   const kpi = mockKPIs;
   const criticalAlerts = mockAlerts.filter(a => a.severity === "critical" && a.status === "active");
 
@@ -362,11 +364,26 @@ export default function DashboardPage() {
                   <span>Confidence: <b style={{ color: "var(--accent)" }}>{Math.round(pred.confidenceScore * 100)}%</b></span>
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
-                  <button className="btn-primary" style={{ flex: 1, justifyContent: "center", fontSize: 12, padding: "6px 10px" }}>
-                    <Zap size={12} /> Order {pred.reorderSuggested} units
+                  <button 
+                    className="btn-primary" 
+                    onClick={() => {
+                      alert(`Drafting Purchase Order for ${pred.reorderSuggested} units of ${pred.medicineName}... Navigating to Supply Chain.`);
+                      router.push("/dashboard/supply-chain");
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 8px 16px rgba(16,185,129,0.3)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "none"; }}
+                    style={{ flex: 1, justifyContent: "center", fontSize: 13, padding: "8px 10px", transition: "all 0.2s" }}
+                  >
+                    <Zap size={14} /> Order {pred.reorderSuggested} units
                   </button>
-                  <button className="btn-ghost" style={{ padding: "6px 10px", fontSize: 12 }}>
-                    <ChevronRight size={12} />
+                  <button 
+                    className="btn-ghost" 
+                    onClick={() => router.push("/dashboard/ai-insights")}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-light)"; e.currentTarget.style.color = "var(--accent)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-muted)"; }}
+                    style={{ padding: "8px 12px", fontSize: 13, transition: "all 0.2s" }}
+                  >
+                    <ChevronRight size={14} />
                   </button>
                 </div>
               </div>

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '../../../lib/auth';
-import { getActiveAlerts, acknowledgeAlert, resolveAlert } from '../../../lib/services/alertService';
+import { getActiveAlerts, acknowledgeAlert, resolveAlert, createAlert } from '../../../lib/services/alertService';
 
 async function handler(req: NextRequest) {
   const user = (req as any).user;
@@ -10,6 +10,19 @@ async function handler(req: NextRequest) {
     try {
       const alerts = await getActiveAlerts(hospitalId);
       return NextResponse.json({ alerts });
+    } catch (err: any) {
+      return NextResponse.json({ error: err.message }, { status: 500 });
+    }
+  }
+
+  if (req.method === 'POST') {
+    try {
+      const body = await req.json();
+      const alert = await createAlert({
+        ...body,
+        hospitalId,
+      });
+      return NextResponse.json({ success: true, alert });
     } catch (err: any) {
       return NextResponse.json({ error: err.message }, { status: 500 });
     }
@@ -34,4 +47,5 @@ async function handler(req: NextRequest) {
 }
 
 export const GET = withAuth(handler);
+export const POST = withAuth(handler);
 export const PATCH = withAuth(handler);

@@ -1,5 +1,6 @@
 import { adminDb } from '../firebaseAdmin';
 import { Alert, AlertType, AlertSeverity } from '../../types';
+import { notifyAlert } from './notificationService';
 
 const COLLECTION = 'alerts';
 
@@ -20,8 +21,21 @@ export async function createAlert(alertData: Omit<Alert, 'id' | 'createdAt' | 's
     id: docRef.id,
     createdAt: new Date(),
     status: 'active',
+    smsSent: false,
+    emailSent: false,
   };
   await docRef.set(newAlert);
+
+  // Asynchronously send notifications wait for it to finish so Next.js doesn't kill the promise
+  try {
+    const { smsSent, emailSent } = await notifyAlert(newAlert.title, newAlert.message, newAlert.severity);
+    await docRef.update({ smsSent, emailSent });
+    newAlert.smsSent = smsSent;
+    newAlert.emailSent = emailSent;
+  } catch (err) {
+    console.error('[Alert Service] Notification failed:', err);
+  }
+
   return newAlert;
 }
 

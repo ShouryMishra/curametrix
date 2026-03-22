@@ -64,6 +64,8 @@ def predict_reorders(model, features, current_inventory, month):
     
     return reorders
 
+import joblib
+
 # ==========================================
 # MAIN
 # ==========================================
@@ -73,6 +75,11 @@ try:
     
     print("\nSUCCESS: Model trained on real datasets.")
     print(f"Columns used: {df.columns.tolist()[:10]}...")
+    
+    # Save the trained model and features
+    joblib.dump(model, 'ml/trained_prediction_model.joblib')
+    joblib.dump(features, 'ml/model_features.joblib')
+    print("✅ SUCCESS: Live Model and Features exported to the /ml folder!")
     
     # Example notification trigger
     critical_drugs = df[df['reorder_flag'] == 'YES']['drug_name'].unique()

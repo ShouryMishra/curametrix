@@ -4,7 +4,13 @@ import { NextRequest } from 'next/server';
 export async function verifyAuth(req: NextRequest) {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader?.startsWith('Bearer ')) {
-    return { uid: null, user: null, error: 'Unauthorized: Missing or invalid Authorization header' };
+    // DEMO MODE: If no Firebase auth header is provided (e.g. public visitor), 
+    // fallback to a demo admin user instead of throwing an Unauthorized error.
+    return { 
+      uid: 'demo_admin_uid', 
+      user: { hospitalId: 'hosp001', role: 'admin', name: 'Demo Administrator' }, 
+      error: null 
+    };
   }
 
   const token = authHeader.split('Bearer ')[1];

@@ -141,6 +141,9 @@ export default function DashboardPage() {
   const [orderingId, setOrderingId] = useState<string | null>(null);
   const [orderedItems, setOrderedItems] = useState<Set<string>>(new Set());
   const [orderToast, setOrderToast] = useState<string | null>(null);
+  
+  // Real AI Predictions state
+  const [aiPredictions, setAiPredictions] = useState(mockDemandPredictions);
 
   useEffect(() => {
     async function fetchData() {
@@ -159,6 +162,27 @@ export default function DashboardPage() {
           const alertData = await alertResult.value.json();
           if (alertData.alerts?.length > 0) setAlerts(alertData.alerts);
         }
+        
+        // Replace the mock demand with real API call (Python Backend Model)
+        try {
+          const aiResponse = await fetch('/api/predict', {
+             method: 'POST',
+             body: JSON.stringify({ features: [3, 25.5, 0, 1, 0, 0, 0, 0, 0] }) // Example features for March
+          });
+          const aiData = await aiResponse.json();
+          if (aiData.predicted_demand !== undefined) {
+             setAiPredictions(prev => {
+                const next = [...prev];
+                // Override the first AI mock with real real-time ML prediction
+                next[0].predictedDemand = aiData.predicted_demand;
+                next[0].reorderSuggested = Math.max(0, aiData.predicted_demand - next[0].currentStock + 50);
+                return next;
+             });
+          }
+        } catch (e) {
+          console.error("Live AI prediction failed:", e);
+        }
+        
       } catch (err) {
         console.error("Failed to fetch dashboard data:", err);
         // Keep fallback data already set in state
@@ -443,7 +467,7 @@ export default function DashboardPage() {
             <a href="/dashboard/ai-insights" style={{ fontSize: 12, color: "var(--accent)", fontWeight: 600, textDecoration: "none" }}>All Insights →</a>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {mockDemandPredictions.map(pred => (
+            {aiPredictions.map(pred => (
               <div key={pred.medicineId} style={{
                 padding: "12px 14px",
                 border: pred.daysUntilStockout <= 10 ? "1px solid #FECACA" : "1px solid var(--border)",
